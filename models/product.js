@@ -14,18 +14,8 @@ const productSchema = new Schema(
 		},
 		sellerCategory: [
 			{
-				type: String,
-				enum: [
-					'娛樂',
-					'服飾',
-					'3C產品',
-					'食品',
-					'家具',
-					'運動',
-					'寵物',
-					'生活用品',
-					'清潔用品',
-				],
+				type: Number,
+				enum: [1, 2, 3, 4, 5, 6, 7, 8, 9], //1:娛樂 2:服飾 3:3C產品 4:食品 5:家具 6:運動用品 7:寵物用品 8:生活用品 9:清潔用品
 				required: [true, '必須選擇總類別'],
 			},
 		],
@@ -58,8 +48,8 @@ const productSchema = new Schema(
 		},
 		pay: [
 			{
-				type: String,
-				enum: ['信用卡付款', 'ATM匯款', '店到店付費'],
+				type: Number,
+				enum: [1, 2, 3], //1:信用卡付款 2.ATM匯款 3.店到店付費
 				required: [true, '請至少提供一種支付方式'],
 			},
 		],

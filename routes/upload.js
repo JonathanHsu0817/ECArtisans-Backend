@@ -4,7 +4,7 @@ const router = express.Router();
 const appError = require('../service/appError');
 const handleErrorAsync = require('../service/handleErrorAsync');
 
-const isAuth = require('../middlewares/isAuth');
+const { isAuth } = require('../middlewares/isAuth');
 const upload = require('../middlewares/image');
 
 const { v4: uuidv4 } = require('uuid');

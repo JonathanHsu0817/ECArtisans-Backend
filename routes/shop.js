@@ -5,7 +5,7 @@ const shopControllers = require('../controllers/shopControllers.js');
 const Seller = require('../models/seller.js');
 const Order = require('../models/order.js');
 
-const isAuth = require('../middlewares/isAuth.js'); //將Auth驗證放到middleware 如果有其他地方需要可以共用
+const { isAuth, restriction } = require('../middlewares/isAuth.js'); //將Auth驗證放到middleware 如果有其他地方需要可以共用
 
 const bcrypt = require('bcrypt'); //加密套件
 
@@ -176,43 +176,70 @@ router.get('/:seller_id/orders', async (req, res, next) => {
 router.get(
 	'/:seller_id/products/all',
 	isAuth,
+	restriction('seller'),
 	shopControllers.products.getProductsAll
 );
 router.get(
 	'/:seller_id/products',
 	isAuth,
+	restriction('seller'),
 	shopControllers.products.getProducts
 );
 router.get(
 	'/:seller_id/product/:product_id',
 	isAuth,
+	restriction('seller'),
 	shopControllers.products.getProduct
 );
-router.post('/product', isAuth, shopControllers.products.createProduct);
+router.post(
+	'/product',
+	isAuth,
+	restriction('seller'),
+	shopControllers.products.createProduct
+);
 router.put(
 	'/product/:product_id',
 	isAuth,
+	restriction('seller'),
 	shopControllers.products.updateProduct
 );
 router.delete(
 	'/:seller_id/product/:product_id',
 	isAuth,
+	restriction('seller'),
 	shopControllers.products.deleteProduct
 );
 
 //折價券資訊
-router.get('/:seller_id/coupons', isAuth, shopControllers.coupons.getCoupons);
+router.get(
+	'/:seller_id/coupons',
+	isAuth,
+	restriction('seller'),
+	shopControllers.coupons.getCoupons
+);
 router.get(
 	'/:seller_id/coupon/:coupon_id',
 	isAuth,
+	restriction('seller'),
 	shopControllers.coupons.getCoupon
 );
-router.post('/coupon', isAuth, shopControllers.coupons.createCoupon);
-// router.put('/coupon/:coupon_id', isAuth, shopControllers.);
-// router.delete(
-// 	'/:seller_id/coupon/:coupon_id',
-// 	isAuth,
-// 	shopControllers.
-// );
+router.post(
+	'/coupon',
+	isAuth,
+	restriction('seller'),
+	shopControllers.coupons.createCoupon
+);
+router.put(
+	'/coupon/:coupon_id',
+	isAuth,
+	restriction('seller'),
+	shopControllers.coupons.updateCoupon
+);
+router.delete(
+	'/:seller_id/coupon/:coupon_id',
+	isAuth,
+	restriction('seller'),
+	shopControllers.coupons.deleteCoupon
+);
 
 module.exports = router;

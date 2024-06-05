@@ -10,12 +10,12 @@ const carts = {
 			// 獲取產品及指定規格
 			const product = await Product.findById(productId);
 			if (!product) {
-				return appError(404, '未找到指定產品', next);
+				return appError(404, '未找到指定產品 ( ˘•ω•˘ )', next);
 			}
 
 			const format = product.format.id(formatId);
 			if (!format) {
-				return appError(404, '未找到指定規格', next);
+				return appError(404, '未找到指定規格 ( ˘•ω•˘ )', next);
 			}
 
 			const price = format.price;
@@ -61,9 +61,10 @@ const carts = {
 				{ new: true, upsert: true } // `upsert` 此會再找不到就會創新的一個
 			);
 
-			res.status(200).json({ message: '成功添加到購物車', cart: updatedCart });
+			res
+				.status(200)
+				.json({ message: '成功添加到購物車啦 ( ﾉ>ω<)ﾉ', cart: updatedCart });
 		} catch (error) {
-			console.error(error);
 			res.status(500).json({ message: 'Internal Server Error' });
 		}
 	},

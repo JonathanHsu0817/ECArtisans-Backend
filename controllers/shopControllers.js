@@ -1,8 +1,8 @@
-const handleSuccess = require('../service/handleSuccess');
-const handleError = require('../service/handleError');
 const Products = require('../models/product');
 const Coupons = require('../models/coupon');
 const Seller = require('../models/seller');
+
+const appError = require('../service/appError');
 
 //商品相關
 const products = {
@@ -14,7 +14,11 @@ const products = {
 			path: 'sellerOwned',
 			select: 'brand product',
 		});
-		handleSuccess(res, allProducts);
+		res.status(200).json({
+			status: true,
+			message: '商品抓出來啦~ ( ﾉ>ω<)ﾉ',
+			products: allProducts,
+		});
 	},
 	async getProducts(req, res) {
 		try {
@@ -49,13 +53,17 @@ const products = {
 				hasNext: page < totalPages,
 			};
 
-			res.json({
+			res.status(200).json({
 				status: true,
+				message: '商品抓出來啦~ ( ﾉ>ω<)ﾉ',
 				products: products,
 				pagination: pagination,
 			});
 		} catch (err) {
-			handleError(err);
+			return res.status(404).json({
+				status: false,
+				message: '找不到此商品 ( ˘•ω•˘ )',
+			});
 		}
 	},
 	async getProduct(req, res) {
@@ -70,18 +78,19 @@ const products = {
 		});
 
 		if (!thisProduct) {
-			return res.status(404).json({
-				status: false,
-				message: '找不到此商品',
-			});
+			return appError(404, '找不到此商品 ( ˘•ω•˘ )', next);
 		}
 
-		handleSuccess(res, thisProduct);
+		res.status(200).json({
+			status: true,
+			message: '商品抓出來啦~ ( ﾉ>ω<)ﾉ',
+			products: thisProduct,
+		});
 	},
 	async createProduct(req, res) {
 		try {
 			const sellerOwned = req.user._id;
-			//console.log(sellerOwned);
+
 			const {
 				productName,
 				sellerCategory,
@@ -119,12 +128,17 @@ const products = {
 				await Seller.findByIdAndUpdate(sellerOwned, {
 					$push: { product: newProduct._id },
 				});
-				handleSuccess(res, newProduct);
-			} else {
-				handleError(res);
+				res.status(200).json({
+					status: true,
+					message: '建立好商品啦~ ( ﾉ>ω<)ﾉ',
+					products: newProduct,
+				});
 			}
 		} catch (err) {
-			handleError(res, err);
+			return res.status(500).json({
+				status: false,
+				message: '建立商品失敗呢 ( ˘•ω•˘ )',
+			});
 		}
 	},
 	async updateProduct(req, res) {
@@ -167,18 +181,20 @@ const products = {
 				});
 
 				if (!updatedProduct) {
-					return res.status(404).json({
-						status: false,
-						message: '找不到產品',
-					});
+					return appError(404, '更新商品失敗了 ( ˘•ω•˘ )', next);
 				}
 
-				handleSuccess(res, updatedProduct);
-			} else {
-				handleError(res);
+				res.status(200).json({
+					status: true,
+					message: '更新好商品啦~ ( ﾉ>ω<)ﾉ',
+					products: newProduct,
+				});
 			}
 		} catch (err) {
-			handleError(res, err);
+			return res.status(500).json({
+				status: false,
+				message: '更新商品失敗了 ( ˘•ω•˘ )',
+			});
 		}
 	},
 	async deleteProduct(req, res) {
@@ -189,10 +205,11 @@ const products = {
 				sellerOwned: seller_id,
 			});
 			if (!product) {
-				return res.status(404).json({
-					status: false,
-					message: '此商品沒被找到或您無權刪除此商品',
-				});
+				return appError(
+					404,
+					'此商品沒被找到或您無權刪除此商品喔 ( ˘•ω•˘ )',
+					next
+				);
 			}
 
 			await Products.deleteOne({ _id: product_id });
@@ -201,15 +218,15 @@ const products = {
 				$pull: { product: product_id },
 			});
 
-			res.json({
+			res.status(200).json({
 				status: true,
-				message: '此商品成功被刪除',
+				message: '此商品成功被刪除啦 ( ﾉ>ω<)ﾉ',
 			});
 		} catch (error) {
 			console.error(error);
 			res.status(500).json({
 				status: false,
-				message: 'Internal Server Error',
+				message: '刪除失敗，請重新嘗試喔 ( ˘•ω•˘ ) ',
 			});
 		}
 	},
@@ -243,13 +260,17 @@ const coupons = {
 				hasNext: page < totalPages,
 			};
 
-			res.json({
+			res.status(200).json({
 				status: true,
+				message: '折價券抓出來啦 ( ﾉ>ω<)ﾉ',
 				Coupons: coupons,
 				pagination: pagination,
 			});
 		} catch (err) {
-			handleError(err);
+			res.status(500).json({
+				status: false,
+				message: '折價券抓取失敗，請重新嘗試喔 ( ˘•ω•˘ ) ',
+			});
 		}
 	},
 	async getCoupon(req, res) {
@@ -264,13 +285,14 @@ const coupons = {
 		});
 
 		if (!thisCoupon) {
-			return res.status(404).json({
-				status: false,
-				message: '找不到此折價券',
-			});
+			return appError(404, '找不到此折價券，請在嘗試一次 ( ˘•ω•˘ )', next);
 		}
 
-		handleSuccess(res, thisCoupon);
+		res.status(200).json({
+			status: true,
+			message: '折價券抓出來啦 ( ﾉ>ω<)ﾉ',
+			Coupons: thisCoupon,
+		});
 	},
 	async createCoupon(req, res) {
 		try {
@@ -301,9 +323,16 @@ const coupons = {
 			await Seller.findByIdAndUpdate(seller, {
 				$push: { discount: newCoupon._id },
 			});
-			handleSuccess(res, newCoupon);
+			res.status(200).json({
+				status: true,
+				message: '折價券建立成功啦 ( ﾉ>ω<)ﾉ',
+				Coupons: thisCoupon,
+			});
 		} catch (err) {
-			handleError(res, err);
+			return res.status(500).json({
+				status: false,
+				message: '折價券建立失敗，請在嘗試一次 ( ˘•ω•˘ )',
+			});
 		}
 	},
 	async updateCoupon(req, res) {
@@ -334,15 +363,19 @@ const coupons = {
 			});
 
 			if (!updatedCoupon) {
-				return res.status(404).json({
-					status: false,
-					message: '找不到產品',
-				});
+				return appError(404, '找不到折價券，請再嘗試一次( ˘•ω•˘ )', next);
 			}
 
-			handleSuccess(res, updatedCoupon);
+			res.status(200).json({
+				status: true,
+				message: '折價券更新成功啦 ( ﾉ>ω<)ﾉ',
+				Coupons: updatedCoupon,
+			});
 		} catch (err) {
-			handleError(res, err);
+			return res.status(500).json({
+				status: false,
+				message: '找不到折價券，請再嘗試一次( ˘•ω•˘ )',
+			});
 		}
 	},
 	async deleteCoupon(req, res) {
@@ -353,10 +386,11 @@ const coupons = {
 				sellerOwned: seller_id,
 			});
 			if (!coupon) {
-				return res.status(404).json({
-					status: false,
-					message: '此折價券沒被找到或您無權刪除此商品',
-				});
+				return appError(
+					404,
+					'此折價券沒被找到或您無權刪除此折價券喔 ( ˘•ω•˘ )',
+					next
+				);
 			}
 
 			await Coupon.deleteOne({ _id: coupon_id });
@@ -365,15 +399,15 @@ const coupons = {
 				$pull: { product: product_id },
 			});
 
-			res.json({
+			res.status(200).json({
 				status: true,
-				message: '此商品成功被刪除',
+				message: '此折價券成功被刪除啦 ( ﾉ>ω<)ﾉ',
 			});
 		} catch (error) {
 			console.error(error);
 			res.status(500).json({
 				status: false,
-				message: 'Internal Server Error',
+				message: '刪除失敗，請重新嘗試喔 ( ˘•ω•˘ )',
 			});
 		}
 	},
