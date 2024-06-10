@@ -7,12 +7,12 @@ const appError = require('../service/appError');
 //商品相關
 const products = {
 	async getProductsAll(req, res) {
-		const sellerID = req.params.seller_id;
+		const sellerID = req.user._id;
 		const allProducts = await Products.find({
 			sellerOwned: sellerID,
 		}).populate({
 			path: 'sellerOwned',
-			select: 'brand product',
+			select: 'brand',
 		});
 		res.status(200).json({
 			status: true,
@@ -22,7 +22,7 @@ const products = {
 	},
 	async getProducts(req, res) {
 		try {
-			const sellerID = req.params.seller_id;
+			const sellerID = req.user._id;
 			const page = parseInt(req.query.page, 10) || 1;
 			const qty = parseInt(req.query.qty, 12) || 12;
 			const category = req.query.category; //指定自訂分類
@@ -43,7 +43,7 @@ const products = {
 				.limit(qty)
 				.populate({
 					path: 'sellerOwned',
-					select: 'brand discount',
+					select: 'brand',
 				});
 
 			const pagination = {
@@ -67,14 +67,14 @@ const products = {
 		}
 	},
 	async getProduct(req, res) {
-		const sellerID = req.params.seller_id;
+		const sellerID = req.user._id;
 		const productID = req.params.product_id;
 		const thisProduct = await Products.find({
 			_id: productID,
 			sellerOwned: sellerID,
 		}).populate({
 			path: 'sellerOwned',
-			select: 'brand product',
+			select: 'brand',
 		});
 
 		if (!thisProduct) {
@@ -107,6 +107,11 @@ const products = {
 				image,
 			} = req.body;
 
+			const updatedFormats = format.map((format, index) => ({
+				...format,
+				image: image[index % image.length],
+			}));
+
 			if (req.body) {
 				const newProduct = await Products.create({
 					sellerOwned,
@@ -115,7 +120,7 @@ const products = {
 					category,
 					origin,
 					ingredient,
-					format,
+					format: updatedFormats,
 					introduction,
 					production,
 					isOnShelf,
@@ -163,22 +168,31 @@ const products = {
 			} = req.body;
 
 			if (req.body) {
-				const updatedProduct = await Products.findByIdAndUpdate(productID, {
-					sellerOwned,
-					productName,
-					sellerCategory,
-					category,
-					origin,
-					ingredient,
-					format,
-					introduction,
-					production,
-					isOnShelf,
-					fare,
-					pay,
-					keyword,
-					image,
-				});
+				const updatedFormat = format.map((format, index) => ({
+					...format,
+					image: image[index % image.length],
+				}));
+
+				const updatedProduct = await Products.findByIdAndUpdate(
+					productID,
+					{
+						sellerOwned,
+						productName,
+						sellerCategory,
+						category,
+						origin,
+						ingredient,
+						format: updatedFormat,
+						introduction,
+						production,
+						isOnShelf,
+						fare,
+						pay,
+						keyword,
+						image,
+					},
+					{ new: true, runValidators: true }
+				);
 
 				if (!updatedProduct) {
 					return appError(404, '更新商品失敗了 ( ˘•ω•˘ )', next);
@@ -187,7 +201,7 @@ const products = {
 				res.status(200).json({
 					status: true,
 					message: '更新好商品啦~ ( ﾉ>ω<)ﾉ',
-					products: newProduct,
+					products: updatedProduct,
 				});
 			}
 		} catch (err) {
@@ -198,11 +212,12 @@ const products = {
 		}
 	},
 	async deleteProduct(req, res) {
-		const { seller_id, product_id } = req.params;
+		const productID = req.params.product_id;
+		const sellerID = req.user._id;
 		try {
-			const product = await Product.findOne({
-				_id: product_id,
-				sellerOwned: seller_id,
+			const product = await Products.findOne({
+				_id: productID,
+				sellerOwned: sellerID,
 			});
 			if (!product) {
 				return appError(
@@ -211,11 +226,10 @@ const products = {
 					next
 				);
 			}
+			await Products.deleteOne({ _id: productID });
 
-			await Products.deleteOne({ _id: product_id });
-
-			await Seller.findByIdAndUpdate(seller_id, {
-				$pull: { product: product_id },
+			await Seller.findByIdAndUpdate(sellerID, {
+				$pull: { product: productID },
 			});
 
 			res.status(200).json({
@@ -234,13 +248,49 @@ const products = {
 
 //折價券相關
 const coupons = {
+	async getCouponsAll(req, res) {
+		try {
+			const sellerID = req.user._id;
+			const allProducts = await Coupons.find({
+				seller: sellerID,
+			}).populate({
+				path: 'seller',
+				select: 'brand',
+			});
+
+			res.status(200).json({
+				status: true,
+				message: '折價券抓出來啦 ( ﾉ>ω<)ﾉ',
+				Coupons: allProducts,
+			});
+		} catch (err) {
+			res.status(500).json({
+				status: false,
+				message: '折價券抓取失敗，請重新嘗試喔 ( ˘•ω•˘ ) ',
+			});
+		}
+	},
 	async getCoupons(req, res) {
 		try {
-			const sellerID = req.params.seller_id;
+			const sellerID = req.user._id;
 			const page = parseInt(req.query.page, 10) || 1;
 			const qty = parseInt(req.query.qty, 12) || 12;
 
 			let query = { seller: sellerID };
+
+			//未啟用
+			if (req.query.disabled === 'true') {
+				query.isEnabled = false;
+			} else if (req.query.disabled === 'false') {
+				query.isEnabled = true;
+			}
+
+			//失效
+			if (req.query.invalid === 'true') {
+				query.endDate = { $lt: new Date() };
+			} else if (req.query.invalid === 'false') {
+				query.endDate = { $gte: new Date() };
+			}
 
 			const skip = (page - 1) * qty;
 			const totalCoupons = await Coupons.countDocuments({
@@ -250,7 +300,7 @@ const coupons = {
 
 			const coupons = await Coupons.find(query).skip(skip).limit(qty).populate({
 				path: 'seller',
-				select: 'brand discount',
+				select: 'brand',
 			});
 
 			const pagination = {
@@ -274,14 +324,14 @@ const coupons = {
 		}
 	},
 	async getCoupon(req, res) {
-		const sellerID = req.params.seller_id;
+		const sellerID = req.user._id;
 		const couponID = req.params.coupon_id;
 		const thisCoupon = await Coupons.find({
 			_id: couponID,
 			seller: sellerID,
 		}).populate({
 			path: 'seller',
-			select: 'brand coupon',
+			select: 'brand',
 		});
 
 		if (!thisCoupon) {
@@ -304,9 +354,14 @@ const coupons = {
 				type,
 				discountConditions,
 				percentage,
-				discountScope,
+				productType,
+				productChoose,
 				isEnabled,
 			} = req.body;
+
+			if (new Date(startDate) > new Date(endDate)) {
+				return appError(400, '結束日期必須在開始日期之後', next);
+			}
 
 			const newCoupon = await Coupons.create({
 				couponName,
@@ -315,18 +370,19 @@ const coupons = {
 				type,
 				discountConditions,
 				percentage,
-				discountScope,
+				productType,
+				productChoose,
 				isEnabled,
 				seller,
 			});
-			// 更新卖家的折价券列表
+			// 更新賣家的折價券列表
 			await Seller.findByIdAndUpdate(seller, {
 				$push: { discount: newCoupon._id },
 			});
 			res.status(200).json({
 				status: true,
 				message: '折價券建立成功啦 ( ﾉ>ω<)ﾉ',
-				Coupons: thisCoupon,
+				Coupons: newCoupon,
 			});
 		} catch (err) {
 			return res.status(500).json({
@@ -346,25 +402,40 @@ const coupons = {
 				type,
 				discountConditions,
 				percentage,
-				discountScope,
+				productType,
+				productChoose,
 				isEnabled,
 			} = req.body;
 
-			const updatedCoupon = await Coupons.findByIdAndUpdate(couponID, {
-				couponName,
-				startDate,
-				endDate,
-				type,
-				discountConditions,
-				percentage,
-				discountScope,
-				isEnabled,
-				seller,
-			});
-
-			if (!updatedCoupon) {
-				return appError(404, '找不到折價券，請再嘗試一次( ˘•ω•˘ )', next);
+			if (new Date(startDate) > new Date(endDate)) {
+				return appError(400, '結束日期必須在開始日期之後', next);
 			}
+
+			const coupon = await Coupons.findOne({ _id: couponID, seller });
+			if (!coupon) {
+				return appError(
+					404,
+					'找不到折價券或您無權修改此折價券 ( ˘•ω•˘ )',
+					next
+				);
+			}
+
+			const updatedCoupon = await Coupons.findByIdAndUpdate(
+				couponID,
+				{
+					couponName,
+					startDate,
+					endDate,
+					type,
+					discountConditions,
+					percentage,
+					productType,
+					productChoose,
+					isEnabled,
+					seller,
+				},
+				{ new: true, runValidators: true }
+			);
 
 			res.status(200).json({
 				status: true,
@@ -379,12 +450,14 @@ const coupons = {
 		}
 	},
 	async deleteCoupon(req, res) {
-		const { seller_id, coupon_id } = req.params;
+		const couponID = req.params.coupon_id;
+		const seller = req.user._id;
 		try {
-			const coupon = await coupon.findOne({
-				_id: coupon_id,
-				sellerOwned: seller_id,
+			const coupon = await Coupons.findOne({
+				_id: couponID,
+				seller,
 			});
+
 			if (!coupon) {
 				return appError(
 					404,
@@ -393,10 +466,10 @@ const coupons = {
 				);
 			}
 
-			await Coupon.deleteOne({ _id: coupon_id });
+			await Coupons.deleteOne({ _id: couponID });
 
-			await Seller.findByIdAndUpdate(seller_id, {
-				$pull: { product: product_id },
+			await Seller.findByIdAndUpdate(seller, {
+				$pull: { discount: couponID },
 			});
 
 			res.status(200).json({
