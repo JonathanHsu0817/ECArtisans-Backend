@@ -20,7 +20,7 @@ const SellerSchema = new Schema(
 			type: Date,
 			default: () => {
 				const currentDate = new Date();
-				currentDate.setFullYear(currentDate.getFullYear() + 1);
+				currentDate.setMonth(currentDate.getMonth() + 1);
 				return currentDate;
 			},
 		},

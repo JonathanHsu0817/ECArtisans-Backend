@@ -174,19 +174,19 @@ router.get('/:seller_id/orders', async (req, res, next) => {
 
 //商品資訊
 router.get(
-	'/:seller_id/products/all',
+	'/products/all',
 	isAuth,
 	restriction('seller'),
 	shopControllers.products.getProductsAll
 );
 router.get(
-	'/:seller_id/products',
+	'/products',
 	isAuth,
 	restriction('seller'),
 	shopControllers.products.getProducts
 );
 router.get(
-	'/:seller_id/product/:product_id',
+	'/product/:product_id',
 	isAuth,
 	restriction('seller'),
 	shopControllers.products.getProduct
@@ -204,7 +204,7 @@ router.put(
 	shopControllers.products.updateProduct
 );
 router.delete(
-	'/:seller_id/product/:product_id',
+	'/product/:product_id',
 	isAuth,
 	restriction('seller'),
 	shopControllers.products.deleteProduct
@@ -212,13 +212,19 @@ router.delete(
 
 //折價券資訊
 router.get(
-	'/:seller_id/coupons',
+	'/coupons/all',
+	isAuth,
+	restriction('seller'),
+	shopControllers.coupons.getCouponsAll
+);
+router.get(
+	'/coupons',
 	isAuth,
 	restriction('seller'),
 	shopControllers.coupons.getCoupons
 );
 router.get(
-	'/:seller_id/coupon/:coupon_id',
+	'/coupon/:coupon_id',
 	isAuth,
 	restriction('seller'),
 	shopControllers.coupons.getCoupon
@@ -236,7 +242,7 @@ router.put(
 	shopControllers.coupons.updateCoupon
 );
 router.delete(
-	'/:seller_id/coupon/:coupon_id',
+	'/coupon/:coupon_id',
 	isAuth,
 	restriction('seller'),
 	shopControllers.coupons.deleteCoupon

@@ -41,7 +41,11 @@ router.post(
 			};
 			// 取得檔案的網址
 			blob.getSignedUrl(config, (err, fileUrl) => {
-				res.status(200).json({ status: 'success', fileUrl });
+				res.status(200).json({
+					status: 'success',
+					message: '圖片上傳成功啦~ ( ﾉ>ω<)ﾉ',
+					fileUrl,
+				});
 			});
 		});
 

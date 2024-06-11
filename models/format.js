@@ -18,6 +18,9 @@ const formatSchema = new Schema(
 		stock: {
 			type: Number,
 		},
+		image: {
+			type: String,
+		},
 		color: [String],
 	},
 	{
