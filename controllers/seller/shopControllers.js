@@ -1,8 +1,8 @@
-const Products = require('../models/product');
-const Coupons = require('../models/coupon');
-const Seller = require('../models/seller');
+const Products = require('../../models/product');
+const Coupons = require('../../models/coupon');
+const Seller = require('../../models/seller');
 
-const appError = require('../service/appError');
+const appError = require('../../service/appError');
 
 //商品相關
 const products = {

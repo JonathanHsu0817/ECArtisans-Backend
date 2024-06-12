@@ -13,7 +13,7 @@ let indexRouter = require('./routes/index');
 let usersRouter = require('./routes/users');
 let activitiesRouter = require('./routes/activities');
 let authRouter = require('./routes/auth');
-let cartsRouter = require('./routes/carts');
+let cartsRouter = require('./routes/cart');
 let detailRouter = require('./routes/detail');
 let discountsRouter = require('./routes/discounts');
 let homeRouter = require('./routes/home');
@@ -55,7 +55,7 @@ app.use('/products', productsRouter);
 app.use('/orders', ordersRouter);
 app.use('/activities', activitiesRouter);
 app.use('/discounts', discountsRouter);
-app.use('/carts', cartsRouter);
+app.use('/cart', cartsRouter);
 //view
 app.use('/home', homeRouter);
 app.use('/shop', shopRouter);

@@ -157,6 +157,7 @@ router.post('/signup', async (req, res, next) => {
 	try {
 		const {
 			name,
+			role,
 			gender,
 			password,
 			confirmPassword,
@@ -205,8 +206,8 @@ router.post('/signup', async (req, res, next) => {
 		// 建立新用戶
 		const newUser = await User.create({
 			name,
-			gender,
 			role,
+			gender,
 			password: hashedPassword,
 			birthday,
 			mail,
@@ -232,7 +233,7 @@ router.post('/login', async (req, res, next) => {
 			return next(appError(400, '帳號密碼不能為空', next));
 		}
 
-		const user = await User.findOne({ mail }).select('+password');
+		const user = await User.findOne({ mail }).select('+password +role');
 		if (!user) {
 			return next(appError(400, '用戶不存在', next));
 		}
