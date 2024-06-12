@@ -1,8 +1,8 @@
-const Order = require('../models/order');
-const Cart = require('../models/cart');
-const User = require('../models/user');
-const Seller = require('../models/seller');
-const appError = require('../utils/appError');
+const Order = require('../../models/order');
+const Cart = require('../../models/cart');
+const User = require('../../models/user');
+const Seller = require('../../models/seller');
+const appError = require('../../service/appError');
 
 const order = {
 	async createOrder(req, res) {

@@ -17,7 +17,7 @@ let cartsRouter = require('./routes/cart');
 let detailRouter = require('./routes/detail');
 let discountsRouter = require('./routes/discounts');
 let homeRouter = require('./routes/home');
-let ordersRouter = require('./routes/orders');
+let ordersRouter = require('./routes/order');
 let productsRouter = require('./routes/products');
 let searchRouter = require('./routes/search');
 let sellersRouter = require('./routes/sellers');
@@ -52,7 +52,7 @@ app.use('/', indexRouter); //預設(目前無用)
 app.use('/users', usersRouter);
 app.use('/sellers', sellersRouter);
 app.use('/products', productsRouter);
-app.use('/orders', ordersRouter);
+app.use('/order', ordersRouter);
 app.use('/activities', activitiesRouter);
 app.use('/discounts', discountsRouter);
 app.use('/cart', cartsRouter);
