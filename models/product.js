@@ -68,7 +68,10 @@ const productSchema = new Schema(
 				ref: 'Review',
 			},
 		],
-
+		tags: {
+			type: [Number],
+			enum: [0, 1], // 0: 免運券, 1: 折抵券
+		},
 		//已售出數量
 		sold: {
 			type: Number,

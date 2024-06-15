@@ -375,6 +375,22 @@ const coupons = {
 				isEnabled,
 				seller,
 			});
+
+			// 更新商品標籤
+			let updateQuery;
+			if (productType === 1) {
+				// 指定商家所有商品
+				updateQuery = { sellerOwned: seller };
+			} else if (productType === 2) {
+				// 指定商品
+				updateQuery = { _id: { $in: productChoose } };
+			}
+
+			if (updateQuery) {
+				const tag = type === 0 ? 0 : 1; // 0: 免運券, 1: 折抵券
+				await Products.updateMany(updateQuery, { $addToSet: { tags: tag } });
+			}
+
 			// 更新賣家的折價券列表
 			await Seller.findByIdAndUpdate(seller, {
 				$push: { discount: newCoupon._id },
@@ -420,6 +436,20 @@ const coupons = {
 				);
 			}
 
+			// 更新標籤前，先移除原本的
+			let removeQuery;
+			if (coupon.productType === 1) {
+				// 移除該賣家所有商品的舊標籤
+				removeQuery = { sellerOwned: seller };
+			} else if (coupon.productType === 2) {
+				// 移除指定商品的舊標籤
+				removeQuery = { _id: { $in: coupon.productChoose } };
+			}
+			if (removeQuery) {
+				const oldTag = coupon.type === 0 ? 0 : 1;
+				await Products.updateMany(removeQuery, { $pull: { tags: oldTag } });
+			}
+
 			const updatedCoupon = await Coupons.findByIdAndUpdate(
 				couponID,
 				{
@@ -436,6 +466,21 @@ const coupons = {
 				},
 				{ new: true, runValidators: true }
 			);
+
+			// 更新商品標籤
+			let updateQuery;
+			if (productType === 1) {
+				// 指定商家所有商品
+				updateQuery = { sellerOwned: seller };
+			} else if (productType === 2) {
+				// 指定商品
+				updateQuery = { _id: { $in: productChoose } };
+			}
+
+			if (updateQuery) {
+				const tag = type === 0 ? 0 : 1; // 0: 免運券, 1: 折抵券
+				await Products.updateMany(updateQuery, { $addToSet: { tags: tag } });
+			}
 
 			res.status(200).json({
 				status: true,

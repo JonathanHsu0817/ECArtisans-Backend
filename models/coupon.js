@@ -20,11 +20,21 @@ const couponSchema = new Schema(
 		},
 		discountConditions: {
 			type: Number,
-			required: true,
+			validate: {
+				validator: function (value) {
+					return this.type !== 1 || (this.type === 1 && value !== undefined);
+				},
+				message: '折價券類型的優惠券必須填寫折扣條件',
+			},
 		},
 		percentage: {
 			type: Number,
-			required: true,
+			validate: {
+				validator: function (value) {
+					return this.type !== 1 || (this.type === 1 && value !== undefined);
+				},
+				message: '折價券類型的優惠券必須填寫折扣百分比',
+			},
 		},
 		productType: {
 			type: Number,
