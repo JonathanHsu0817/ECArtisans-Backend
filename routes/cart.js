@@ -6,6 +6,8 @@ const cartController = require('../controllers/user/cartControllers');
 //加入購物車
 router.post('/', isAuth, cartController.addToCart);
 
+router.post('/select', isAuth, cartController.chooseSelectedCart);
+
 router.get('/', isAuth, cartController.getCart);
 
 router.put('/:productId/:formatId', isAuth, cartController.updateCart);
