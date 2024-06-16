@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
+const formatSchema = require('../models/format');
 
 const orderItemSchema = new Schema(
 	{
@@ -9,7 +10,7 @@ const orderItemSchema = new Schema(
 			required: true,
 		},
 		format: {
-			type: Object,
+			type: formatSchema,
 			required: true,
 		},
 		quantity: {
@@ -39,11 +40,11 @@ const orderSchema = new Schema(
 			ref: 'Sellers',
 			required: true,
 		},
-		createAt: {
+		createdAt: {
 			type: Date,
 			default: Date.now,
 		},
-		updateAt: {
+		updatedAt: {
 			type: Date,
 			default: Date.now,
 		},
@@ -58,7 +59,7 @@ const orderSchema = new Schema(
 			required: true,
 		},
 		pay: {
-			type: [Number],
+			type: Number,
 			required: true,
 			enum: [1, 2, 3], // 1:信用卡付款, 2:ATM匯款, 3:店到店付費
 		},
@@ -67,7 +68,7 @@ const orderSchema = new Schema(
 			required: true,
 		},
 		delivery: {
-			type: [Number],
+			type: Number,
 			required: true,
 			enum: [1, 2, 3], // 1:宅配 2:黑貓宅急便 3:店到店
 		},

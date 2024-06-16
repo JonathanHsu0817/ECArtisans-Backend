@@ -3,11 +3,11 @@ const Schema = mongoose.Schema;
 
 const SellerSchema = new Schema(
 	{
-		bossName: { type: String, default: '', require: [true] },
+		bossName: { type: String, default: '', required: [true] },
 		gender: { type: String, default: '' },
-		phone: { type: String, default: '', require: [true] },
-		mail: { type: String, default: '', require: [true] },
-		brand: { type: String, default: '', require: [true] },
+		phone: { type: String, default: '', required: [true] },
+		mail: { type: String, default: '', required: [true] },
+		brand: { type: String, default: '', required: [true] },
 		avatar: { type: String, default: '' },
 		role: {
 			type: String,
@@ -24,7 +24,7 @@ const SellerSchema = new Schema(
 				return currentDate;
 			},
 		},
-		password: { type: String, require: [true], select: false },
+		password: { type: String, required: [true], select: false },
 		otherPassword: { type: String, select: false },
 		address: { type: String, default: '' },
 		introduce: { type: String, default: '' },

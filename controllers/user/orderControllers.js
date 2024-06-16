@@ -8,10 +8,10 @@ const order = {
 	async createOrder(req, res) {
 		try {
 			const userId = req.user._id;
-			const { selectedItems, address, delivery } = req.body;
+			const { selectedItems, address, delivery, pay, fare } = req.body;
 
-			if (!address || !delivery) {
-				return next(appError(400, '帳號密碼不能為空', next));
+			if (!address || !delivery || !pay || !fare) {
+				return appError(400, '地址、配送方式、支付方式和運費不能為空', next);
 			}
 
 			const cart = await Cart.findOne({ user: userId }).populate({
@@ -25,9 +25,8 @@ const order = {
 
 			// 驗證並過濾
 			const orderItems = [];
-			let sellerId = cartItem.product.sellerOwned.toString();
+			let sellerId = '';
 			let totalPrice = 0;
-			let payMethods = [1, 2, 3]; // 暫時默認全部支付方式
 
 			selectedItems.forEach((item) => {
 				const cartItem = cart.items.find(
@@ -40,6 +39,12 @@ const order = {
 					return appError(400, '選定的商品在購物車中不存在 ( ˘•ω•˘ )', next);
 				}
 
+				if (sellerId && sellerId !== cartItem.product.sellerOwned.toString()) {
+					return appError(400, '選定的商品必須屬於同一商家 ( ˘•ω•˘ )', next);
+				}
+
+				sellerId = cartItem.product.sellerOwned.toString();
+
 				orderItems.push({
 					product: cartItem.product._id,
 					format: cartItem.format,
@@ -48,37 +53,28 @@ const order = {
 				});
 
 				totalPrice += cartItem.price;
-
-				payMethods = payMethods.filter((method) =>
-					cartItem.product.pay.includes(method)
-				);
 			});
 
-			// 計算運費
-			const fares = cart.items.map((item) => item.product.fare);
-			const shippingFee = Math.max(...fares); // 取最高運費
-
-			// 創建訂單
+			// 創建訂單;
 			const newOrder = await Order.create({
 				user: userId,
 				seller: sellerId,
 				products: orderItems,
 				state: 0, // 未付
 				totalPrice,
-				pay: payMethods,
+				pay,
 				address,
 				delivery,
-				fare: shippingFee,
+				fare,
 			});
-
 			// 更新用戶的訂單列表
 			await User.findByIdAndUpdate(userId, {
-				$push: { orders: newOrder._id },
+				$push: { spHistory: newOrder._id },
 			});
 
 			// 更新賣家的訂單列表
 			await Seller.findByIdAndUpdate(sellerId, {
-				$push: { orders: newOrder._id },
+				$push: { order: newOrder._id },
 			});
 
 			// 購物車移除已選的商品
@@ -103,6 +99,7 @@ const order = {
 				order: newOrder,
 			});
 		} catch (err) {
+			console.log(err);
 			res.status(500).json({
 				status: false,
 				message: '出現錯誤捏，再重新試一次看看 ( ˘•ω•˘ )',

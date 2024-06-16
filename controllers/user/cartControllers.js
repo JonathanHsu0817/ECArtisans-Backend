@@ -81,17 +81,85 @@ const cart = {
 			// 查找用戶的購物車
 			const cart = await Cart.findOne({ user: userId }).populate({
 				path: 'items.product',
-				select: 'productName image price',
+				select: 'productName image price fare pay',
 			});
 
 			if (!cart) {
-				return appError(404, '未找到购物车 ( ˘•ω•˘ )', next);
+				return appError(404, '未找到購物車 ( ˘•ω•˘ )', next);
 			}
 
 			res.status(200).json({
 				status: true,
-				message: '成功获取购物车 ( ﾉ>ω<)ﾉ',
+				message: '成功獲取購物車 ( ﾉ>ω<)ﾉ',
 				cart: cart,
+			});
+		} catch (err) {
+			res.status(500).json({
+				status: false,
+				message: '出現錯誤捏，再重新試一次看看 ( ˘•ω•˘ )',
+			});
+		}
+	},
+	async chooseSelectedCart(req, res) {
+		try {
+			const userId = req.user._id;
+			const { selectedItems } = req.body;
+
+			if (!selectedItems || !Array.isArray(selectedItems)) {
+				return appError(400, '無效的選擇項目 ( ˘•ω•˘ )', next);
+			}
+
+			// 查找用戶的購物車
+			const cart = await Cart.findOne({ user: userId }).populate({
+				path: 'items.product',
+				select: 'productName image price fare pay',
+			});
+
+			if (!cart) {
+				return appError(404, '未找到購物車 ( ˘•ω•˘ )', next);
+			}
+
+			const filteredItems = cart.items.filter((cartItem) =>
+				selectedItems.some(
+					(item) =>
+						item.productId === cartItem.product._id.toString() &&
+						item.formatId === cartItem.format._id.toString()
+				)
+			);
+
+			if (filteredItems.length === 0) {
+				return res.status(400).json({
+					status: false,
+					message: '選定的商品在購物車中不存在 ( ˘•ω•˘ )',
+				});
+			}
+
+			// 計算共同支付方式
+			let payMethods = [1, 2, 3]; // 默認支付方式
+			for (const item of filteredItems) {
+				payMethods = payMethods.filter((method) =>
+					item.product.pay.includes(method)
+				);
+			}
+
+			// 計算最高運費
+			const maxFare = Math.max(
+				...filteredItems.map((item) => item.product.fare)
+			);
+
+			// 計算總價
+			const totalPrice = filteredItems.reduce(
+				(total, item) => total + item.price * item.quantity,
+				0
+			);
+
+			res.status(200).json({
+				status: true,
+				message: '成功獲取選定商品的信息 ( ﾉ>ω<)ﾉ',
+				selectedItems: filteredItems,
+				payMethods,
+				fare: maxFare,
+				totalPrice,
 			});
 		} catch (err) {
 			res.status(500).json({
