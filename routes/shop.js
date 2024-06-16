@@ -1,6 +1,6 @@
 let express = require('express');
 let router = express.Router();
-const shopControllers = require('../controllers/shopControllers.js');
+const shopControllers = require('../controllers/seller/shopControllers.js');
 
 const Seller = require('../models/seller.js');
 const Order = require('../models/order.js');
