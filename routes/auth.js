@@ -1,12 +1,11 @@
 let express = require('express');
 let router = express.Router();
-const mongoose = require('mongoose');
 const Seller = require('../models/seller.js');
 const User = require('../models/user.js');
 
 const bcrypt = require('bcrypt'); //加密套件
+const generateSendJWT = require('../service/jwtToken.js');
 const validator = require('validator'); //表單驗證
-const jwt = require('jsonwebtoken');
 
 const dotenv = require('dotenv');
 dotenv.config({ path: './config.env' });
@@ -22,27 +21,6 @@ const transporter = nodemailer.createTransport({
 });
 
 const appError = require('../service/appError.js');
-const handleError = require('../service/handleError.js');
-
-//token
-const generateSendJWT = (user, statusCode, res) => {
-	const userName = user.name || user.bossName;
-	const token = jwt.sign(
-		{ id: user._id, name: userName },
-		process.env.JWT_SECRET,
-		{
-			expiresIn: process.env.JWT_EXPIRES_DAY,
-		}
-	);
-	res.status(statusCode).json({
-		status: 'success',
-		user: {
-			token,
-			name: user.brand,
-			userName: userName,
-		},
-	});
-};
 
 //賣家註冊
 router.post('/shop-signUp', async (req, res, next) => {
@@ -50,6 +28,7 @@ router.post('/shop-signUp', async (req, res, next) => {
 		let {
 			bossName,
 			gender,
+			role,
 			phone,
 			mail,
 			password,
@@ -73,9 +52,6 @@ router.post('/shop-signUp', async (req, res, next) => {
 			return next(appError(400, '內容不能為空', next));
 		}
 		//確認密碼
-		if (password != confirmPassword) {
-			return next(appError(400, '前後密碼不對', next));
-		}
 		if (password != confirmPassword) {
 			return next(appError(400, '前後密碼不對', next));
 		}
@@ -103,6 +79,7 @@ router.post('/shop-signUp', async (req, res, next) => {
 		password = await bcrypt.hash(req.body.password, 12);
 		const newUser = await Seller.create({
 			bossName,
+			role,
 			gender,
 			phone,
 			mail,
@@ -115,7 +92,10 @@ router.post('/shop-signUp', async (req, res, next) => {
 			introduce,
 		});
 
-		generateSendJWT(newUser, 201, res);
+		res.status(200).json({
+			status: true,
+			message: '註冊成功~，來登入逛逛吧! ( ﾉ>ω<)ﾉ',
+		});
 	} catch (error) {
 		next(error);
 	}
@@ -129,32 +109,55 @@ router.post('/shop-login', async (req, res, next) => {
 		if (!mail || !password) {
 			return next(appError(400, '帳號密碼不能為空', next));
 		}
-		const user = await Seller.findOne({ mail }).select('+password');
-		if (!user) {
+		const seller = await Seller.findOne({ mail }).select('+password +role');
+		if (!seller) {
 			return next(appError(400, '用戶不存在', next));
 		}
-		const auth = await bcrypt.compare(password, user.password);
+		const auth = await bcrypt.compare(password, seller.password);
 		if (!auth) {
 			return next(appError(400, '密碼錯誤', next));
 		}
-		let authSecondPassword = false;
-		if (!auth) {
-			authSecondPassword = password === user.otherPassword; // 比較明文密碼
-		}
-		if (!auth && !authSecondPassword) {
-			return next(appError(400, '密碼不正確', next));
-		}
-		generateSendJWT(user, 200, res);
+		generateSendJWT(seller, 200, res);
 	} catch (error) {
 		next(error);
 	}
 });
+
+// //賣家登入
+// router.post('/shop-login', async (req, res, next) => {
+// 	try {
+// 		// res.setHeader('Access-Control-Allow-Origin', '*');
+// 		const { mail, password } = req.body;
+// 		if (!mail || !password) {
+// 			return next(appError(400, '帳號密碼不能為空', next));
+// 		}
+// 		const seller = await Seller.findOne({ mail }).select('+password +role');
+// 		if (!seller) {
+// 			return next(appError(400, '用戶不存在', next));
+// 		}
+// 		const auth = await bcrypt.compare(password, seller.password);
+// 		if (!auth) {
+// 			return next(appError(400, '密碼錯誤', next));
+// 		}
+// 		let authSecondPassword = false;  後續有空再修改
+// 		if (!auth) {
+// 			authSecondPassword = password === seller.otherPassword; // 比較明文密碼
+// 		}
+// 		if (!auth && !authSecondPassword) {
+// 			return next(appError(400, '密碼不正確', next));
+// 		}
+// 		generateSendJWT(seller, 200, res);
+// 	} catch (error) {
+// 		next(error);
+// 	}
+// });
 
 //買方註冊
 router.post('/signup', async (req, res, next) => {
 	try {
 		const {
 			name,
+			role,
 			gender,
 			password,
 			confirmPassword,
@@ -203,6 +206,7 @@ router.post('/signup', async (req, res, next) => {
 		// 建立新用戶
 		const newUser = await User.create({
 			name,
+			role,
 			gender,
 			password: hashedPassword,
 			birthday,
@@ -211,8 +215,10 @@ router.post('/signup', async (req, res, next) => {
 			phone,
 		});
 
-		// 產生並發送、 JWT
-		generateSendJWT(newUser, 201, res);
+		res.status(200).json({
+			status: true,
+			message: '註冊成功~，來登入逛逛吧! ( ﾉ>ω<)ﾉ',
+		});
 	} catch (error) {
 		next(error);
 	}
@@ -227,7 +233,7 @@ router.post('/login', async (req, res, next) => {
 			return next(appError(400, '帳號密碼不能為空', next));
 		}
 
-		const user = await User.findOne({ mail }).select('+password');
+		const user = await User.findOne({ mail }).select('+password +role');
 		if (!user) {
 			return next(appError(400, '用戶不存在', next));
 		}
@@ -243,30 +249,31 @@ router.post('/login', async (req, res, next) => {
 });
 
 //忘記密碼
-router.post('/shopForget', async (req, res, next) => {
-	try {
-		const { mail } = req.body;
-		const user = await Seller.findOne({ mail: mail });
-		if (!mail) {
-			return next(appError(400, '信箱不得為空', next));
-		}
-		if (!user) {
-			return next(appError(400, '此信箱尚未註冊', next));
-		}
-		transporter.sendMail({
-			from: 'ecnodeproject@gmail.com',
-			to: mail,
-			subject: 'ECArtisans 備用密碼通知信',
-			html: `<h1>您的備用密碼為：${user.otherPassword}</h1>`,
-		});
-		res.status(200).json({
-			status: 'success',
-			message: '已寄出備用密碼，請至信箱查看',
-		});
-	} catch (err) {
-		next(err);
-	}
-});
+
+// 	router.post('/shopForget', async (req, res, next) => {
+// 	try {
+// 		const { mail } = req.body;
+// 		const user = await Seller.findOne({ mail: mail });
+// 		if (!mail) {
+// 			return next(appError(400, '信箱不得為空', next));
+// 		}
+// 		if (!user) {
+// 			return next(appError(400, '此信箱尚未註冊', next));
+// 		}
+// 		transporter.sendMail({
+// 			from: 'ecnodeproject@gmail.com',
+// 			to: mail,
+// 			subject: 'ECArtisans 備用密碼通知信',
+// 			html: `<h1>您的備用密碼為：${user.otherPassword}</h1>`,
+// 		});
+// 		res.status(200).json({
+// 			status: 'success',
+// 			message: '已寄出備用密碼，請至信箱查看',
+// 		});
+// 	} catch (err) {
+// 		next(err);
+// 	}
+// });
 
 module.exports = router;
 

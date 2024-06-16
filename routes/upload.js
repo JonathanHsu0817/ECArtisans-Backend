@@ -4,7 +4,7 @@ const router = express.Router();
 const appError = require('../service/appError');
 const handleErrorAsync = require('../service/handleErrorAsync');
 
-const isAuth = require('../middlewares/isAuth');
+const { isAuth } = require('../middlewares/isAuth');
 const upload = require('../middlewares/image');
 
 const { v4: uuidv4 } = require('uuid');
@@ -41,7 +41,11 @@ router.post(
 			};
 			// 取得檔案的網址
 			blob.getSignedUrl(config, (err, fileUrl) => {
-				res.status(200).json({ status: 'success', fileUrl });
+				res.status(200).json({
+					status: 'success',
+					message: '圖片上傳成功啦~ ( ﾉ>ω<)ﾉ',
+					fileUrl,
+				});
 			});
 		});
 
