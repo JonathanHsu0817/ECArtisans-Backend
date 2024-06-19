@@ -19,7 +19,7 @@ router.get("/:id", async (req, res) => {
 });
 
 // 賣家後台取得所有活動
-router.get("/:sellerId", async (req, res) => {
+router.get("/shop/:sellerId", async (req, res) => {
   // 頁碼預設為1、單頁資料筆數預設為5
   const { page = 1, limit = 5 } = req.query;
 
@@ -48,7 +48,7 @@ router.get("/:sellerId", async (req, res) => {
 });
 
 // 賣家後台取得單一活動
-router.get("/:sellerId/:id", async (req, res) => {
+router.get("/shop/:sellerId/:id", async (req, res) => {
   try {
     const activity = await Activities.findOne({
       _id: req.params.id,
