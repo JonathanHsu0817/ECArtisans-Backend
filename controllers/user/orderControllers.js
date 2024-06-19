@@ -3,6 +3,7 @@ const Cart = require('../../models/cart');
 const User = require('../../models/user');
 const Seller = require('../../models/seller');
 const appError = require('../../service/appError');
+const mongoose = require('mongoose');
 
 const order = {
 	async createOrder(req, res) {
@@ -106,6 +107,80 @@ const order = {
 			});
 		}
 	},
+
+	async getOrders(req, res) {
+		try {
+			const userId = req.user._id;
+	
+			const orders = await Order.find({ user: userId })
+				.populate('products.product', 'name price')
+				.populate('seller', 'name')
+				.exec();
+	
+			if (!orders || orders.length === 0) {
+				return res.status(404).json({
+					status: false,
+					message: '沒有找到訂單記錄'
+				});
+			}
+	
+			res.status(200).json({
+				status: true,
+				message: '訂單記錄獲取成功',
+				orders: orders
+			});
+		} catch (err) {
+			console.log(err);
+			res.status(500).json({
+				status: false,
+				message: '服務器錯誤，請稍後再試',
+				error: err.message
+			});
+		}
+	},
+
+	async getSpecificOrder(req, res) {
+		try {
+			const orderId = req.params.orderId;
+
+			// 檢查訂單ID是否輸入正確
+			if (!mongoose.isValidObjectId(orderId)) {
+				return res.status(400).json({
+					status: false,
+					message: '訂單ID輸入錯誤或無效的ID格式'
+				});
+			}
+
+	
+			// 查詢訂單詳情
+			const order = await Order.findById(orderId)
+				.populate('products.product', 'name price description')
+				.populate('seller', 'name contactInfo')
+				.exec();
+	
+			if (!order || order.length === 0) {
+				return res.status(404).json({
+					status: false,
+					message: '訂單不存在'
+				});
+			}
+	
+			res.status(200).json({
+				status: true,
+				message: '訂單詳情獲取成功',
+				order: order
+			});
+		} catch (err) {
+			console.log(err);
+			res.status(500).json({
+				status: false,
+				message: '服務器錯誤，請稍後再試',
+				error: err.message
+			});
+		}
+	}
+	
+
 };
 
 module.exports = order;
