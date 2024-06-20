@@ -1,30 +1,32 @@
-let createError = require('http-errors');
-let express = require('express');
-let path = require('path');
-let cookieParser = require('cookie-parser');
-let logger = require('morgan');
+const createError = require('http-errors');
+const express = require('express');
+const path = require('path');
+const cookieParser = require('cookie-parser');
+const logger = require('morgan');
 const dotenv = require('dotenv');
 const cors = require('cors');
-//郵件套件
-let nodemailer = require('nodemailer');
+// 郵件套件
+const nodemailer = require('nodemailer');
 
-//routes
-let indexRouter = require('./routes/index');
-let usersRouter = require('./routes/users');
-let activitiesRouter = require('./routes/activities');
-let authRouter = require('./routes/auth');
-let cartsRouter = require('./routes/cart');
-let detailRouter = require('./routes/detail');
-let discountsRouter = require('./routes/discounts');
-let homeRouter = require('./routes/home');
-let ordersRouter = require('./routes/order');
-let productsRouter = require('./routes/products');
-let searchRouter = require('./routes/search');
-let sellersRouter = require('./routes/sellers');
-let shopRouter = require('./routes/shop');
-let uploadRouter = require('./routes/upload');
+// routes
+const mongoose = require('mongoose');
+const indexRouter = require('./routes/index');
+const usersRouter = require('./routes/users');
+const activitiesRouter = require('./routes/activities');
+const authRouter = require('./routes/auth');
+const cartsRouter = require('./routes/cart');
+const detailRouter = require('./routes/detail');
+const discountsRouter = require('./routes/discounts');
+const homeRouter = require('./routes/home');
+const ordersRouter = require('./routes/order');
+const productsRouter = require('./routes/products');
+const searchRouter = require('./routes/search');
+const sellersRouter = require('./routes/sellers');
+const shopRouter = require('./routes/shop');
+const uploadRouter = require('./routes/upload');
+const paymentRouter = require('./routes/payment');
 
-let app = express();
+const app = express();
 // 防範程式碼出大錯誤
 process.on('uncaughtException', (err) => {
 	// 記錄錯誤下來，等到服務都處理完後，停掉該 process
@@ -35,7 +37,6 @@ process.on('uncaughtException', (err) => {
 
 // mongodb
 dotenv.config({ path: './config.env' });
-const mongoose = require('mongoose');
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
@@ -47,8 +48,8 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(cors());
-app.use('/', indexRouter); //預設(目前無用)
-//data
+app.use('/', indexRouter); // 預設(目前無用)
+// data
 app.use('/users', usersRouter);
 app.use('/sellers', sellersRouter);
 app.use('/products', productsRouter);
@@ -56,14 +57,15 @@ app.use('/order', ordersRouter);
 app.use('/activities', activitiesRouter);
 app.use('/discounts', discountsRouter);
 app.use('/cart', cartsRouter);
-//view
+// view
 app.use('/home', homeRouter);
 app.use('/shop', shopRouter);
 app.use('/detail', detailRouter);
-//Function
+// Function
 app.use('/auth', authRouter);
 app.use('/search', searchRouter);
 app.use('/upload', uploadRouter);
+app.use('/payment', paymentRouter);
 
 mongoose
 	.connect(process.env.DATABASE)
@@ -75,23 +77,10 @@ mongoose
 	});
 
 // catch 404 and forward to error handler
-app.use(function (req, res, next) {
+app.use((req, res, next) => {
 	next(createError(404));
 });
 
-// const resErrorProd = (err,res) =>{
-//   if(err.isOperational){
-//     res.status(err.statusCode).json({
-//       message:err.message
-//     })
-//   }else{
-//     console.error("出現重大錯誤",err)
-//     res.status(500).json({
-//       status: 'error',
-//       message: '系統錯誤～～'
-//     })
-//   }
-// }
 const resErrorDev = (err, res) => {
 	res.status(err.statusCode).json({
 		message: err.message,
@@ -101,7 +90,7 @@ const resErrorDev = (err, res) => {
 };
 
 // error handler
-app.use(function (err, req, res, next) {
+app.use((err, req, res, next) => {
 	err.statusCode = err.statusCode || 500;
 	if (process.env.NODE_ENV === 'dev') {
 		return resErrorDev(err, res);
