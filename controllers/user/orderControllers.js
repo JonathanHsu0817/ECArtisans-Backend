@@ -201,6 +201,12 @@ const order = {
 	async getSellerOrderDetail(req, res){
 		try{
 			const orderId = req.params.orderId;
+			if(!orderId || !mongoose.isValidObjectId(orderId)){
+				return res.status(400).json({
+					status: false,
+					message: '訂單id輸入錯誤'
+				})
+			}
 			const order = await Order.findOne({_id: orderId})
 				.populate('user', '_id')
 				.populate('products')
