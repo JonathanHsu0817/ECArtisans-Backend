@@ -138,7 +138,6 @@ const order = {
 			});
 		}
 	},
-
 	async getSpecificOrder(req, res) {
 		try {
 			const orderId = req.params.orderId;
@@ -178,8 +177,52 @@ const order = {
 				error: err.message
 			});
 		}
-	}
+	},
 	
+	async getSellerOrders(req, res) {
+		try {
+			const sellerId = req.user._id;
+			const orders = await Seller.find({ _id: sellerId })
+				.populate('order', '_id totalPrice state products.format.image createdAt updatedAt')
+				.select({ order: 1, _id: 0 });
+			res.status(200).json({
+				status: 'success',
+				message: '訂單查詢成功',
+				orders
+			});
+		} catch (err) {
+			res.status(500).json({
+				status: false,
+				message: "伺服器錯誤，請稍後再試",
+			});
+		}
+	},
+
+	async getSellerOrderDetail(req, res){
+		try{
+			const orderId = req.params.orderId;
+			const order = await Order.findOne({_id: orderId})
+				.populate('user', '_id')
+				.populate('products')
+			if(!order){
+				return res.status(404).json({
+					status: false,
+					message: '訂單不存在'
+				})
+			}
+			res.status(200).json({
+				status: true,
+				message: '訂單詳情獲取成功',
+				order: order
+			})
+		}
+		catch(err){
+			res.status(500).json({
+				status: false,
+				message: "伺服器錯誤，請稍後再試",
+			});
+		}
+	}
 
 };
 

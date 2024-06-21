@@ -8,6 +8,7 @@ const Order = require('../models/order.js');
 const { isAuth, restriction } = require('../middlewares/isAuth.js'); //將Auth驗證放到middleware 如果有其他地方需要可以共用
 
 const bcrypt = require('bcrypt'); //加密套件
+const orderController = require('../controllers/user/orderControllers');
 
 //商家導覽
 router.get('/:seller_id/home', async (req, res, next) => {
@@ -79,6 +80,7 @@ router.get('/:seller_id/information', async (req, res, next) => {
 		);
 	}
 });
+//修改商家資訊
 router.put('/:seller_id/information', async (req, res, next) => {
 	const {
 		bossName,
@@ -140,37 +142,43 @@ router.put('/:seller_id/information', async (req, res, next) => {
 });
 
 //訂單管理
-router.get('/:seller_id/orders', async (req, res, next) => {
-	const headers = {
-		'Access-Control-Allow-Headers':
-			'Content-Type, Authorization, Content-Length, X-Requested-With',
-		'Access-Control-Allow-Origin': '*',
-		'Access-Control-Allow-Methods': 'PATCH, POST, GET,OPTIONS,DELETE',
-		'Content-Type': 'application/json',
-	};
-	try {
-		const seller = req.params.seller_id;
-		const thisShop = await Seller.find({ _id: seller })
-			.populate('order')
-			.select({ order: 1, _id: 0 });
-		res.writeHead(200, headers);
-		res.write(
-			JSON.stringify({
-				status: 'success',
-				thisShop,
-			})
-		);
-		res.end();
-	} catch (err) {
-		res.writeHead(500, headers);
-		res.end(
-			JSON.stringify({
-				status: 'error',
-				message: 'Internal Server Error',
-			})
-		);
-	}
-});
+// router.get('/:seller_id/orders', async (req, res, next) => {
+// 	const headers = {
+// 		'Access-Control-Allow-Headers':
+// 			'Content-Type, Authorization, Content-Length, X-Requested-With',
+// 		'Access-Control-Allow-Origin': '*',
+// 		'Access-Control-Allow-Methods': 'PATCH, POST, GET,OPTIONS,DELETE',
+// 		'Content-Type': 'application/json',
+// 	};
+// 	try {
+// 		const seller = req.params.seller_id;
+// 		const thisShop = await Seller.find({ _id: seller })
+// 			.populate('order')
+// 			.select({ order: 1, _id: 0 });
+// 		res.writeHead(200, headers);
+// 		res.write(
+// 			JSON.stringify({
+// 				status: 'success',
+// 				thisShop,
+// 			})
+// 		);
+// 		res.end();
+// 	} catch (err) {
+// 		res.writeHead(500, headers);
+// 		res.end(
+// 			JSON.stringify({
+// 				status: 'error',
+// 				message: 'Internal Server Error',
+// 			})
+// 		);
+// 	}
+// });
+
+//賣家查詢所有訂單紀錄
+router.get('/orders', isAuth, orderController.getSellerOrders);
+
+//賣家查詢單一訂單詳情
+router.get('/order/:orderId', isAuth, orderController.getSellerOrderDetail);
 
 //商品資訊
 router.get(
