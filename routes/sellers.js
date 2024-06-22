@@ -73,19 +73,28 @@ router.get('/:sellerId/products', async (req, res) => {
     const { sellerId } = req.params;
 
     // 查詢屬於該賣家的所有商品
-    const products = await Product.find({
+    const productsQuery = Product.find({
       sellerOwned: sellerId,
       isOnshelf: true,
-    })
-      .populate({
-        path: 'sellerOwned',
-        select: 'brand',
-        model: Seller,
-      })
-      .lean();
+    }).populate({
+      path: "sellerOwned",
+      select: "brand",
+      model: Seller,
+    });
+
+    const productsPromise = productsQuery.lean().exec();
+
+    // 同時計算總筆數
+    const [products, totalCount] = await Promise.all([
+      productsPromise,
+      Product.countDocuments({
+        sellerOwned: sellerId,
+        isOnshelf: true,
+      }),
+    ]);
 
     if (!products || products.length === 0) {
-      return res.status(404).json({ message: 'No products found' });
+      return res.status(404).json({ message: "No products found" });
     }
 
     // 格式化商品資料
@@ -96,7 +105,7 @@ router.get('/:sellerId/products', async (req, res) => {
       seller_name: product.sellerOwned.brand,
       price: product.price,
       total_sales: product.sold,
-      discount: product.tags.includes(0) ? '免運券' : '',
+      discount: product.tags.includes(0) ? "免運券" : "",
       star:
         product.reviews.length > 0
           ? calculateAverageRating(product.reviews)
@@ -105,10 +114,12 @@ router.get('/:sellerId/products', async (req, res) => {
 
     res.status(200).json({
       status: true,
+      total_products: totalCount,
       data: formattedData,
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 });
+
 module.exports = router;
