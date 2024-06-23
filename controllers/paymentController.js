@@ -41,11 +41,15 @@ const handlePaymentResult = handleErrorAsync(async (req, res, next) => {
 	const decryptedInfo = paymentService.createSesDecrypt(TradeInfo);
 	const paymentResult = JSON.parse(decryptedInfo);
 
+	console.log('付款完成，訂單：', paymentResult);
+
 	res.status(200).json({
 		status: true,
-		message: '支付结果处理成功',
+		message: '支付結果回傳',
 		paymentResult,
 	});
+
+	res.end();
 });
 
 module.exports = {

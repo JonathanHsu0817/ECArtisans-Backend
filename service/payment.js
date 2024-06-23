@@ -73,7 +73,7 @@ const initiatePayment = async (paymentData) => {
 		Version: config.Version,
 		PayGateWay: config.PayGateWay,
 		ReturnUrl: config.ReturnUrl,
-		// NotifyUrl: config.NotifyUrl,
+		NotifyUrl: config.NotifyUrl,
 	};
 };
 
