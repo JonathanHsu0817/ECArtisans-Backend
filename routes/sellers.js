@@ -97,20 +97,34 @@ router.get('/:sellerId/products', async (req, res) => {
       return res.status(404).json({ message: "No products found" });
     }
 
+  
     // 格式化商品資料
-    const formattedData = products.map((product) => ({
-      products_id: product._id,
-      products_name: product.productName,
-      products_images: product.image[0],
-      seller_name: product.sellerOwned.brand,
-      price: product.price,
-      total_sales: product.sold,
-      discount: product.tags.includes(0) ? "免運券" : "",
-      star:
-        product.reviews.length > 0
-          ? calculateAverageRating(product.reviews)
-          : 0,
-    }));
+    const formattedData = products.map((product) => {
+      const discount = [];
+      if (product.tags.includes(0)) {
+        discount.push("免運券");
+      }
+      if (product.tags.includes(1)) {
+        discount.push("折抵券");
+      }
+  
+      return {
+        products_id: product._id,
+        products_name: product.productName,
+        products_images: product.image[0],
+        seller_name: product.sellerOwned.brand,
+        price:
+          product.format && product.format.length > 0
+            ? product.format[0].price
+            : null,
+        total_sales: product.sold,
+        discount: discount.length > 0 ? discount : null,
+        star:
+          product.reviews.length > 0
+            ? calculateAverageRating(product.reviews)
+            : 0,
+      }
+    });
 
     res.status(200).json({
       status: true,
