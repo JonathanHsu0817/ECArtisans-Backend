@@ -7,6 +7,8 @@ const paymentController = require('../controllers/paymentController');
 
 router.post('/', paymentController.initiatePayment);
 
+router.post('/return', paymentController.handlePaymentReturnUrl);
+
 router.post('/notify', paymentController.handlePaymentResult);
 
 module.exports = router;

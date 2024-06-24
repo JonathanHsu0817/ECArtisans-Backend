@@ -6,6 +6,8 @@ const appError = require('../service/appError');
 const paymentService = require('../service/payment');
 const { config } = require('../service/payment');
 
+const orders = {};
+
 const initiatePayment = handleErrorAsync(async (req, res, next) => {
 	const { email, Amt, ItemDesc } = req.body;
 	// console.log(email, Amt, ItemDesc);
@@ -36,17 +38,29 @@ const initiatePayment = handleErrorAsync(async (req, res, next) => {
 	});
 });
 
+const handlePaymentReturnUrl = handleErrorAsync(async (req, res, next) => {
+	console.log('req.body return data', req.body);
+	res.render('success', { title: 'Express' });
+});
+
 const handlePaymentResult = handleErrorAsync(async (req, res, next) => {
+	console.log('req.body notify data', req.body);
 	const { TradeInfo } = req.body;
 	const decryptedInfo = paymentService.createSesDecrypt(TradeInfo);
-	const paymentResult = JSON.parse(decryptedInfo);
+	console.log('data:', decryptedInfo);
 
-	console.log('付款完成，訂單：', paymentResult);
+	const paymentResult1 = JSON.parse(decryptedInfo);
+
+	console.log('付款完成1，訂單：', paymentResult1);
+
+	const paymentResult2 = orders[data?.Result?.MerchantOrderNo];
+
+	console.log('付款完成2，訂單：', paymentResult2);
 
 	res.status(200).json({
 		status: true,
 		message: '支付結果回傳',
-		paymentResult,
+		paymentResult2,
 	});
 
 	res.end();
@@ -54,5 +68,6 @@ const handlePaymentResult = handleErrorAsync(async (req, res, next) => {
 
 module.exports = {
 	initiatePayment,
+	handlePaymentReturnUrl,
 	handlePaymentResult,
 };
