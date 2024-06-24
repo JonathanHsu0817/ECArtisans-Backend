@@ -6,6 +6,7 @@ const bcrypt = require('bcrypt'); // 加密套件
 const jwt = require('jsonwebtoken');
 const Seller = require('../models/seller.js');
 const Product = require('../models/product');
+const Activities = require("../models/activity");
 
 // 取得所有賣家
 router.get('/', async (req, res, next) => {
@@ -47,16 +48,20 @@ router.get('/:sellerId', async (req, res) => {
       return res.status(404).json({ message: 'Seller not found' });
     }
 
+    // 查詢賣家最新活動
+    const latestActivity = await Activities.findOne({ seller: sellerId })
+      .sort({ start_date: -1 })
+      .lean();
+
     // 格式化賣家資料
-    // TODO:差一個欄位seller_info_date
     const formattedData = {
       seller_id: seller._id,
-      activies_img: seller.activity,
+      activies_img: latestActivity ? latestActivity.activity_images[0] : '', // 最新活動的第一張圖片
       seller_image: seller.avatar,
       seller_name: seller.brand,
       seller_info: seller.introduce,
-      discount:
-        seller.discount && seller.discount.length > 0 ? seller.discount[0] : '',
+      discount: seller.discount && seller.discount.length > 0 ? seller.discount[0] : '',
+      seller_info_date: latestActivity ? latestActivity.start_date : null, // 最新活動的開始日期
     };
 
     res.status(200).json({
