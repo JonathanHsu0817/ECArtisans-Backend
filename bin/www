@@ -5,20 +5,19 @@
  */
 
 let app = require('../app');
-let debug = require('debug')
-('ecartisans-backend:server');
+let debug = require('debug')('ecartisans-backend:server');
 let http = require('http');
 const crypto = require('crypto');
-const Seller = require('../models/seller.js')
-const User = require('../models/user.js')
+const Seller = require('../models/seller.js');
+const User = require('../models/user.js');
 
 //聊天室
-let socketIO = require('../scoket-io.js')
+let socketIO = require('../socket-io.js');
 
 function generateSecureRandomNumber(length) {
-  const buffer = crypto.randomBytes(Math.ceil(length / 2));
-  return buffer.toString('hex').slice(0, length);
-}   
+	const buffer = crypto.randomBytes(Math.ceil(length / 2));
+	return buffer.toString('hex').slice(0, length);
+}
 
 /**
  * Get port from environment and store in Express.
@@ -32,46 +31,48 @@ app.set('port', port);
  */
 
 let server = http.createServer(app);
-socketIO(server)
+socketIO(server);
 /**
  * Listen on provided port, on all network interfaces.
  */
 
 server.listen(port, () => {
-  // 為了 Seller 集合中的每個項目生成新的隨機密碼
-  const updateSellersPromise = Seller.find({}, '_id').exec()
-    .then((sellers) => {
-      const promises = sellers.map((seller) => {
-        const secureRandomNumber = generateSecureRandomNumber(8);
-        return Seller.updateOne(
-          { _id: seller._id },
-          { otherPassword: secureRandomNumber }
-        )
-      });
-      return Promise.all(promises);
-    });
+	// 為了 Seller 集合中的每個項目生成新的隨機密碼
+	const updateSellersPromise = Seller.find({}, '_id')
+		.exec()
+		.then((sellers) => {
+			const promises = sellers.map((seller) => {
+				const secureRandomNumber = generateSecureRandomNumber(8);
+				return Seller.updateOne(
+					{ _id: seller._id },
+					{ otherPassword: secureRandomNumber }
+				);
+			});
+			return Promise.all(promises);
+		});
 
-  // 為了 User 集合中的每個項目生成新的隨機密碼
-  const updateUsersPromise = User.find({}, 'name').exec()
-    .then((users) => {
-      const promises = users.map((user) => {
-        const secureRandomNumber = generateSecureRandomNumber(8);
-        // return User.updateOne(
-        //   { name: user.name },
-        //   { otherPassword: secureRandomNumber }
-        // )
-      });
-      return Promise.all(promises);
-    });
+	// 為了 User 集合中的每個項目生成新的隨機密碼
+	const updateUsersPromise = User.find({}, 'name')
+		.exec()
+		.then((users) => {
+			const promises = users.map((user) => {
+				const secureRandomNumber = generateSecureRandomNumber(8);
+				// return User.updateOne(
+				//   { name: user.name },
+				//   { otherPassword: secureRandomNumber }
+				// )
+			});
+			return Promise.all(promises);
+		});
 
-  // 等待所有更新操作完成後，開始監聽伺服器請求
-  Promise.all([updateSellersPromise, updateUsersPromise])
-    .then(() => {
-      console.log('所有使用者和賣家備用密碼更新完成');
-    })
-    .catch((err) => {
-      console.error('密碼更新失敗', err);
-    });
+	// 等待所有更新操作完成後，開始監聽伺服器請求
+	Promise.all([updateSellersPromise, updateUsersPromise])
+		.then(() => {
+			console.log('所有使用者和賣家備用密碼更新完成');
+		})
+		.catch((err) => {
+			console.error('密碼更新失敗', err);
+		});
 });
 server.on('error', onError);
 server.on('listening', onListening);
@@ -81,19 +82,19 @@ server.on('listening', onListening);
  */
 
 function normalizePort(val) {
-  let port = parseInt(val, 10);
+	let port = parseInt(val, 10);
 
-  if (isNaN(port)) {
-    // named pipe
-    return val;
-  }
+	if (isNaN(port)) {
+		// named pipe
+		return val;
+	}
 
-  if (port >= 0) {
-    // port number
-    return port;
-  }
+	if (port >= 0) {
+		// port number
+		return port;
+	}
 
-  return false;
+	return false;
 }
 
 /**
@@ -101,27 +102,25 @@ function normalizePort(val) {
  */
 
 function onError(error) {
-  if (error.syscall !== 'listen') {
-    throw error;
-  }
+	if (error.syscall !== 'listen') {
+		throw error;
+	}
 
-  let bind = typeof port === 'string'
-    ? 'Pipe ' + port
-    : 'Port ' + port;
+	let bind = typeof port === 'string' ? 'Pipe ' + port : 'Port ' + port;
 
-  // handle specific listen errors with friendly messages
-  switch (error.code) {
-    case 'EACCES':
-      console.error(bind + ' requires elevated privileges');
-      process.exit(1);
-      break;
-    case 'EADDRINUSE':
-      console.error(bind + ' is already in use');
-      process.exit(1);
-      break;
-    default:
-      throw error;
-  }
+	// handle specific listen errors with friendly messages
+	switch (error.code) {
+		case 'EACCES':
+			console.error(bind + ' requires elevated privileges');
+			process.exit(1);
+			break;
+		case 'EADDRINUSE':
+			console.error(bind + ' is already in use');
+			process.exit(1);
+			break;
+		default:
+			throw error;
+	}
 }
 
 /**
@@ -129,11 +128,9 @@ function onError(error) {
  */
 
 function onListening() {
-  let addr = server.address();
-  let bind = typeof addr === 'string'
-    ? 'pipe ' + addr
-    : 'port ' + addr.port;
-  debug('Listening on ' + bind);
+	let addr = server.address();
+	let bind = typeof addr === 'string' ? 'pipe ' + addr : 'port ' + addr.port;
+	debug('Listening on ' + bind);
 }
 
 // import { onMounted } from "vue";
@@ -160,9 +157,7 @@ function onListening() {
 //    const message = reactive({
 
 //    })
-  
+
 //   function sendMessage({user , connect}) {
 //     socket.emit("message", { user, connect });
 //   }
-
-
