@@ -37,7 +37,12 @@ const SellerSchema = new Schema(
 		],
 		member: Array,
 		discount: Array,
-		activity: Array,
+		activity: [
+			{
+				type: mongoose.Schema.Types.ObjectId,
+				ref: 'Activity'
+			}
+		],
 		order: [
 			{
 				type: mongoose.Schema.Types.ObjectId,

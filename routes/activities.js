@@ -10,52 +10,27 @@ router.get("/:id", async (req, res) => {
   try {
     const activity = await Activities.findOne({
       _id: req.params.id,
-    });
+    }).lean();
+
     if (!activity) {
       return res.status(404).json({ message: "查無資料" });
     }
-    res.status(200).json(activity);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-});
 
-// 賣家後台取得所有活動
-router.get("/shop", isAuth, restriction("seller"), async (req, res) => {
-  // 頁碼預設為1、單頁資料筆數預設為5
-  const { page = 1, limit = 5 } = req.query;
-
-  try {
-    const activities = await Activities.find({ seller: req.user._id })
-      .skip((page - 1) * limit)
-      .limit(parseInt(limit));
-
-    const total = await Activities.countDocuments({ seller: req.user._id });
-    const totalPages = Math.ceil(total / limit);
+    const formattedActivity = {
+      activity_id: activity._id,
+      seller_id: activity.seller_id,
+      activity_name: activity.activity_name,
+      activity_image: activity.activity_image,
+      start_date: activity.start_date,
+      end_date: activity.end_date,
+      activity_info: activity.activity_info,
+      coupon_id: activity.coupon_id,
+    };
 
     res.status(200).json({
-      page: parseInt(page),
-      limit: parseInt(limit),
-      total,
-      totalPages,
-      data: activities,
+      status: true,
+      data: [formattedActivity],
     });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-});
-
-// 賣家後台取得單一活動
-router.get("/shop/:id", isAuth, restriction("seller"), async (req, res) => {
-  try {
-    const activity = await Activities.findOne({
-      _id: req.params.id,
-      seller: req.user._id,
-    });
-    if (!activity) {
-      return res.status(404).json({ message: "查無資料" });
-    }
-    res.status(200).json(activity);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -65,35 +40,32 @@ router.get("/shop/:id", isAuth, restriction("seller"), async (req, res) => {
 router.post("/", isAuth, restriction("seller"), async (req, res) => {
   const {
     activity_name,
-    activity_images,
-    activity_state,
+    activity_image,
     start_date,
     end_date,
-    description,
-    category,
+    activity_info,
+    coupon_id,
   } = req.body;
 
   if (
     !activity_name ||
-    !activity_images ||
-    !activity_state ||
+    !activity_image ||
     !start_date ||
     !end_date ||
-    !description ||
-    !category
+    !activity_info ||
+    !coupon_id
   ) {
-    return res.status(400).json({ message: "All fields are required" });
+    return res.status(400).json({ message: "所有欄位不可缺少" });
   }
 
   const newActivity = new Activities({
+    seller_id: req.user._id,
     activity_name,
-    activity_images,
-    activity_state,
+    activity_image,
     start_date,
     end_date,
-    seller: req.user._id,
-    description,
-    category,
+    activity_info,
+    coupon_id,
   });
 
   try {
@@ -117,26 +89,24 @@ router.post("/", isAuth, restriction("seller"), async (req, res) => {
 router.put("/:id", isAuth, restriction("seller"), async (req, res) => {
   const {
     activity_name,
-    activity_images,
-    activity_state,
+    activity_image,
     start_date,
     end_date,
-    description,
-    category,
+    activity_info,
+    coupon_id,
   } = req.body;
 
   try {
     const updatedActivity = await Activities.findByIdAndUpdate(
       req.params.id,
       {
+        seller_id: req.user._id,
         activity_name,
-        activity_images,
-        activity_state,
+        activity_image,
         start_date,
         end_date,
-        seller: req.user._id,
-        description,
-        category,
+        activity_info,
+        coupon_id,
       },
       { new: true, runValidators: true }
     );
@@ -161,8 +131,7 @@ router.delete("/:id", isAuth, restriction("seller"), async (req, res) => {
       return res.status(404).json({ message: "查無資料" });
     }
 
-    // TODO:更新賣家的 activity 陣列，移除被刪除的活動 ID 沒有成功
-    const updatedSeller = await Seller.findByIdAndUpdate(
+    await Seller.findByIdAndUpdate(
       req.user._id,
       { $pull: { activity: req.params.id } },
       { new: true }

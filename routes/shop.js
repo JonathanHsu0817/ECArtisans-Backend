@@ -4,8 +4,9 @@ const shopControllers = require('../controllers/seller/shopControllers.js');
 
 const Seller = require('../models/seller.js');
 const Order = require('../models/order.js');
+const Activities = require("../models/activity");
 
-const { isAuth, restriction } = require('../middlewares/isAuth.js'); //將Auth驗證放到middleware 如果有其他地方需要可以共用
+const { isAuth, restriction } = require("../middlewares/isAuth.js"); //將Auth驗證放到middleware 如果有其他地方需要可以共用
 
 const bcrypt = require('bcrypt'); //加密套件
 const orderController = require('../controllers/user/orderControllers');
@@ -255,5 +256,69 @@ router.delete(
 	restriction('seller'),
 	shopControllers.coupons.deleteCoupon
 );
+
+// 活動管理
+
+// 賣家後台取得所有活動
+router.get("/activities", isAuth, restriction("seller"), async (req, res) => {
+	// 頁碼預設為1、單頁資料筆數預設為5
+	const { page = 1, limit = 5 } = req.query;
+  
+	try {
+	  const activities = await Activities.find({ seller_id: req.user._id })
+		.skip((page - 1) * limit)
+		.limit(parseInt(limit));
+  
+	  const total_data = await Activities.countDocuments({ seller_id: req.user._id });
+	  const totalPages = Math.ceil(total_data / limit);
+  
+	 // 格式化活動資料為所需格式
+	 const formattedActivities = activities.map(activity => ({
+	  activity_id: activity._id,
+	  activity_name: activity.activity_name,
+	  activity_image: activity.activity_image,
+	  start_date: activity.start_date,
+	  end_date: activity.end_date
+	 }));
+		
+	  res.status(200).json({
+		page: parseInt(page),
+		limit: parseInt(limit),
+		total_data,
+		totalPages,
+		data: formattedActivities,
+	  });
+	} catch (error) {
+	  res.status(500).json({ message: error.message });
+	}
+  });
+  
+  // 賣家後台取得單一活動
+  router.get("/activities/:id", isAuth, restriction("seller"), async (req, res) => {
+	try {
+	  const activity = await Activities.findOne({
+		_id: req.params.id,
+		seller_id: req.user._id,
+	  });
+		
+		
+	  if (!activity) {
+		return res.status(404).json({ message: "查無資料" });
+		}
+
+		const formattedActivity = {
+			activity_name: activity.activity_name,
+			activity_image: activity.activity_image,
+			start_date: activity.start_date,
+			end_date: activity.end_date,
+			activity_info: activity.activity_info,
+			coupon_id: activity.coupon_id,
+		};
+		
+	  res.status(200).json(formattedActivity);
+	} catch (error) {
+	  res.status(500).json({ message: error.message });
+	}
+  });
 
 module.exports = router;
