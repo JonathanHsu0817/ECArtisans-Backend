@@ -22,6 +22,11 @@ const orderItemSchema = new Schema(
 			type: Number,
 			required: true,
 		},
+		review: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'Review',
+            default: null, // 預設 null，代表尚未評價
+        }
 	},
 	{
 		versionKey: false,

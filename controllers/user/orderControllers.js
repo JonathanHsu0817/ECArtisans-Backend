@@ -2,6 +2,8 @@ const Order = require('../../models/order');
 const Cart = require('../../models/cart');
 const User = require('../../models/user');
 const Seller = require('../../models/seller');
+const Review = require('../../models/review');
+const Product = require('../../models/product');
 const appError = require('../../service/appError');
 const mongoose = require('mongoose');
 
@@ -228,7 +230,53 @@ const order = {
 				message: "伺服器錯誤，請稍後再試",
 			});
 		}
+	},
+
+	async createReview(req, res){
+		const { orderId, productId } = req.params;
+		const { rate } = req.body;
+		const userId = req.user._id; 
+	
+		try {
+			// 檢查訂單是否存在且屬於該用戶
+			const order = await Order.findOne({ _id: orderId, user: userId });
+			if (!order) {
+				return res.status(404).send({ message: '訂單不存在或不屬於該用戶' });
+			}
+	
+			// 檢查訂單中是否存在該商品
+			const productEntry = order.products.find(p => p.product.toString() === productId);
+			if (!productEntry) {
+				return res.status(404).send({ message: '訂單中不存在該商品' });
+			}
+	
+			// 檢查是否已經評價過
+			if (productEntry.review) {
+				return res.status(400).send({ message: '此商品已評價過' });
+			}
+	
+			// 創建評價並保存
+			const review = new Review({
+				userID: userId,
+				rate: rate
+			});
+			await review.save();
+	
+			// 更新訂單中商品的評價
+			productEntry.review = review._id;
+			await order.save();
+	
+			// 同步更新商品的評價
+			await Product.findByIdAndUpdate(productId, {
+				$push: { reviews: review._id }
+			}, { new: true });
+	
+			res.status(201).send({ message: '評價成功🏅', reviewId: review._id });
+		} catch (error) {
+			res.status(500).send({ message: '伺服器錯誤' });
+		}
 	}
+	
 
 };
 
