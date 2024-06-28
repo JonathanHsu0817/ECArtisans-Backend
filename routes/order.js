@@ -13,3 +13,6 @@ module.exports = router;
 
 // 買家查詢單張訂單詳情
 router.get('/:orderId', isAuth, orderController.getSpecificOrder);
+
+//買家建立商品評價
+router.post('/:orderId/products/:productId/review', isAuth, orderController.createReview);
