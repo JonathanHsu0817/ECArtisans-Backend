@@ -1,43 +1,43 @@
-const express = require('express');
+const express = require("express");
 
 const router = express.Router();
-const mongoose = require('mongoose');
-const bcrypt = require('bcrypt'); // 加密套件
-const jwt = require('jsonwebtoken');
-const Seller = require('../models/seller.js');
-const Product = require('../models/product');
+const mongoose = require("mongoose");
+const bcrypt = require("bcrypt"); // 加密套件
+const jwt = require("jsonwebtoken");
+const Seller = require("../models/seller.js");
+const Product = require("../models/product");
 const Activities = require("../models/activity");
 
 // 取得所有賣家
-router.get('/', async (req, res, next) => {
+router.get("/", async (req, res, next) => {
   const headers = {
-    'Access-Control-Allow-Headers':
-      'Content-Type, Authorization, Content-Length, X-Requested-With',
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'PATCH, POST, GET,OPTIONS,DELETE',
-    'Content-Type': 'application/json',
+    "Access-Control-Allow-Headers":
+      "Content-Type, Authorization, Content-Length, X-Requested-With",
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "PATCH, POST, GET,OPTIONS,DELETE",
+    "Content-Type": "application/json",
   };
   try {
     const sellers = await Seller.find();
     res.writeHead(200, headers);
     res.write(
       JSON.stringify({
-        status: 'success',
+        status: "success",
         sellers,
-      }),
+      })
     );
     res.end();
   } catch (error) {
     console.log(error);
     res.status(500).json({
-      status: 'error',
-      message: 'server error',
+      status: "error",
+      message: "server error",
     });
   }
 });
 
 // 取得單個賣家詳情
-router.get('/:sellerId', async (req, res) => {
+router.get("/:sellerId", async (req, res) => {
   try {
     const { sellerId } = req.params;
 
@@ -45,23 +45,24 @@ router.get('/:sellerId', async (req, res) => {
     const seller = await Seller.findById(sellerId).lean();
 
     if (!seller) {
-      return res.status(404).json({ message: 'Seller not found' });
+      return res.status(404).json({ message: "找不到賣家" });
     }
 
-    // 查詢賣家最新活動
-    const latestActivity = await Activities.findOne({ seller: sellerId })
-      .sort({ start_date: -1 })
-      .lean();
+    // 查詢賣家的所有活動
+    const activities = await Activities.find({ seller: sellerId }).lean();
+
+    // 提取所有活動圖片
+    const activitiesImages = activities.map(
+      (activity) => activity.activity_image
+    );
 
     // 格式化賣家資料
     const formattedData = {
       seller_id: seller._id,
-      activies_img: latestActivity ? latestActivity.activity_images[0] : '', // 最新活動的第一張圖片
+      activities_images: activitiesImages, 
       seller_image: seller.avatar,
       seller_name: seller.brand,
       seller_info: seller.introduce,
-      discount: seller.discount && seller.discount.length > 0 ? seller.discount[0] : '',
-      seller_info_date: latestActivity ? latestActivity.start_date : null, // 最新活動的開始日期
     };
 
     res.status(200).json({
@@ -73,7 +74,7 @@ router.get('/:sellerId', async (req, res) => {
   }
 });
 
-router.get('/:sellerId/products', async (req, res) => {
+router.get("/:sellerId/products", async (req, res) => {
   try {
     const { sellerId } = req.params;
 
@@ -102,7 +103,6 @@ router.get('/:sellerId/products', async (req, res) => {
       return res.status(404).json({ message: "No products found" });
     }
 
-  
     // 格式化商品資料
     const formattedData = products.map((product) => {
       const discount = [];
@@ -112,7 +112,7 @@ router.get('/:sellerId/products', async (req, res) => {
       if (product.tags.includes(1)) {
         discount.push("折抵券");
       }
-  
+
       return {
         products_id: product._id,
         products_name: product.productName,
@@ -128,7 +128,7 @@ router.get('/:sellerId/products', async (req, res) => {
           product.reviews.length > 0
             ? calculateAverageRating(product.reviews)
             : 0,
-      }
+      };
     });
 
     res.status(200).json({
