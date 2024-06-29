@@ -2,6 +2,7 @@ let express = require("express");
 let router = express.Router();
 const Product = require("../models/product");
 const Seller = require("../models/seller");
+const User = require("../models/user");
 
 router.get("/:category", async (req, res) => {
   try {
@@ -24,19 +25,31 @@ router.get("/:category", async (req, res) => {
     }
 
     // 格式化商品資料
-    const formattedData = products.map((product) => ({
-      product_id: product._id,
-      product_name: product.productName,
-      product_images: product.image[0], // 假設這裡取第一張圖片
-      seller_name: product.sellerOwned.bossName,
-      price: product.price,
-      total_sales: product.sold,
-      discount: product.tags.includes(0) ? "免運券" : "", // 根據 tags 中的值來判斷優惠信息
-      star:
-        product.reviews.length > 0
-          ? calculateAverageRating(product.reviews)
-          : 0, // 假設需要計算平均評分的函式
-    }));
+    const formattedData = products.map((product) => {
+      const discount = [];
+
+      if (product.tags && Array.isArray(product.tags)) {
+        if (product.tags.includes(0)) {
+          discount.push("免運券");
+        }
+        if (product.tags.includes(1)) {
+          discount.push("折抵券");
+        }
+      }
+      return {
+        products_id: product._id,
+        products_name: product.productName,
+        products_images: product.image[0], // 假設這裡取第一張圖片
+        seller_name: product.sellerOwned.bossName,
+        price: product.format[0].price,
+        total_sales: product.sold,
+        discount: discount.length > 0 ? discount : null,
+        star:
+          product.reviews.length > 0
+            ? calculateAverageRating(product.reviews)
+            : 0, // 假設需要計算平均評分的函式
+      };
+    });
 
     res.status(200).json({
       status: true,
@@ -62,18 +75,30 @@ router.get("/detail/:productId", async (req, res) => {
       .lean();
 
     if (!product) {
-      return res.status(404).json({ message: "Product not found" });
+      return res.status(404).json({ message: "找不到商品" });
     }
 
     // 確保 product.pay 是陣列，並處理安全訪問
     const paymentMethods = Array.isArray(product.pay) ? product.pay : [];
 
+    const discount = [];
+    if (product.tags && Array.isArray(product.tags)) {
+      if (product.tags.includes(0)) {
+        discount.push("免運券");
+      }
+      if (product.tags.includes(1)) {
+        discount.push("折抵券");
+      }
+    }
+    // 查詢所有收藏了此商品的會員數量
+    const totalCollect = await User.countDocuments({ collect: productId });
+
     // 格式化商品資料
     const formattedData = {
-      product_id: product._id,
-      product_name: product.productName,
-      product_images: product.image, // 取出所有圖片陣列
-      product_info: product.introduction,
+      products_id: product._id,
+      products_name: product.productName,
+      products_images: product.image, // 取出所有圖片陣列
+      products_info: product.introduction,
       production_material: product.ingredient,
       production_method: product.production,
       production_country: product.origin,
@@ -88,15 +113,9 @@ router.get("/detail/:productId", async (req, res) => {
           : 0, // 計算庫存總數
       price: product.format[0].price, // 假設取第一種格式的價格
       total_sales: product.sold,
-      discount:
-        product.tags && product.tags.length > 0 && product.tags.includes(1)
-          ? "八折優惠"
-          : "", // 假設 1 代表八折優惠
+      discount: discount.length > 0 ? discount : null,
       star: product.reviews ? calculateAverageRating(product.reviews) : 0,
-      total_collect:
-        product.reviews && product.reviews.length > 0
-          ? product.reviews.length
-          : 0,
+      total_collect: totalCollect,
     };
 
     res.status(200).json({
