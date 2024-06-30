@@ -249,6 +249,12 @@ router.get("/latest-products", async (req, res) => {
       .limit(limit)
       .lean();
 
+    // 計算平均評分的函式
+    function calculateAverageRating(reviews) {
+      const totalStars = reviews.reduce((acc, curr) => acc + curr.star, 0);
+      return totalStars / reviews.length;
+    }
+
     // 格式化商品資料
     const formattedData = products.map((product) => {
       const discount = [];
