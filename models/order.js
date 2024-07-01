@@ -23,10 +23,10 @@ const orderItemSchema = new Schema(
 			required: true,
 		},
 		review: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: 'Review',
-            default: null, // 預設 null，代表尚未評價
-        }
+			type: mongoose.Schema.Types.ObjectId,
+			ref: 'Review',
+			default: null, // 預設 null，代表尚未評價
+		},
 	},
 	{
 		versionKey: false,
@@ -80,6 +80,19 @@ const orderSchema = new Schema(
 		fare: {
 			type: Number,
 			required: true,
+		},
+		MerchantOrderNo: {
+			//當送貨編號
+			type: String,
+			required: true,
+		},
+		TradeNo: {
+			//交易號碼
+			type: String,
+		},
+		PayTime: {
+			//付款時間
+			type: String,
 		},
 	},
 	{
