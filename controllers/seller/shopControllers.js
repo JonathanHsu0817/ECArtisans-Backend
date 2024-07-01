@@ -63,6 +63,7 @@ const products = {
 			return res.status(404).json({
 				status: false,
 				message: '找不到此商品 ( ˘•ω•˘ )',
+				error: err.message,
 			});
 		}
 	},
@@ -143,6 +144,7 @@ const products = {
 			return res.status(500).json({
 				status: false,
 				message: '建立商品失敗呢 ( ˘•ω•˘ )',
+				error: err.message,
 			});
 		}
 	},
@@ -208,6 +210,39 @@ const products = {
 			return res.status(500).json({
 				status: false,
 				message: '更新商品失敗了 ( ˘•ω•˘ )',
+				error: err.message,
+			});
+		}
+	},
+	async updateProductStatus(req, res) {
+		try {
+			const productID = req.params.product_id;
+			const sellerOwned = req.user._id;
+			const { isOnShelf } = req.body;
+
+			const updatedProductStatus = await Products.findOneAndUpdate(
+				{ _id: productID, sellerOwned },
+				{ isOnShelf },
+				{ new: true, runValidators: true }
+			);
+
+			if (!updatedProduct) {
+				return res.status(404).json({
+					status: false,
+					message: '更新商品失敗了 ( ˘•ω•˘ )',
+				});
+			}
+
+			res.status(200).json({
+				status: true,
+				message: '商品上架狀態已更新 ( ﾉ>ω<)ﾉ',
+				products: updatedProductStatus,
+			});
+		} catch (err) {
+			return res.status(500).json({
+				status: false,
+				message: '更新商品失敗了 ( ˘•ω•˘ )',
+				error: err.message,
 			});
 		}
 	},
@@ -237,10 +272,10 @@ const products = {
 				message: '此商品成功被刪除啦 ( ﾉ>ω<)ﾉ',
 			});
 		} catch (error) {
-			console.error(error);
 			res.status(500).json({
 				status: false,
 				message: '刪除失敗，請重新嘗試喔 ( ˘•ω•˘ ) ',
+				error: err.message,
 			});
 		}
 	},
@@ -267,6 +302,7 @@ const coupons = {
 			res.status(500).json({
 				status: false,
 				message: '折價券抓取失敗，請重新嘗試喔 ( ˘•ω•˘ ) ',
+				error: err.message,
 			});
 		}
 	},
@@ -320,6 +356,7 @@ const coupons = {
 			res.status(500).json({
 				status: false,
 				message: '折價券抓取失敗，請重新嘗試喔 ( ˘•ω•˘ ) ',
+				error: err.message,
 			});
 		}
 	},
@@ -404,6 +441,7 @@ const coupons = {
 			return res.status(500).json({
 				status: false,
 				message: '折價券建立失敗，請在嘗試一次 ( ˘•ω•˘ )',
+				error: err.message,
 			});
 		}
 	},
@@ -491,6 +529,7 @@ const coupons = {
 			return res.status(500).json({
 				status: false,
 				message: '找不到折價券，請再嘗試一次( ˘•ω•˘ )',
+				error: err.message,
 			});
 		}
 	},
@@ -522,10 +561,10 @@ const coupons = {
 				message: '此折價券成功被刪除啦 ( ﾉ>ω<)ﾉ',
 			});
 		} catch (error) {
-			console.error(error);
 			res.status(500).json({
 				status: false,
 				message: '刪除失敗，請重新嘗試喔 ( ˘•ω•˘ )',
+				error: err.message,
 			});
 		}
 	},
