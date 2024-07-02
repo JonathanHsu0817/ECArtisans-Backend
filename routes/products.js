@@ -3,6 +3,7 @@ let router = express.Router();
 const Product = require("../models/product");
 const Seller = require("../models/seller");
 const User = require("../models/user");
+const Activities = require("../models/activity.js");
 
 router.get("/:category", async (req, res) => {
   try {
@@ -69,13 +70,27 @@ router.get("/detail/:productId", async (req, res) => {
     const product = await Product.findById(productId)
       .populate({
         path: "sellerOwned",
-        select: "bossName",
+        select: "brand _id", // 選擇 bossName 和 _id
         model: Seller,
       })
       .lean();
 
     if (!product) {
       return res.status(404).json({ message: "找不到商品" });
+    }
+
+    // 查詢賣家建立的第一個活動
+    let firstActivityImage = null;
+    if (product.sellerOwned) {
+      const firstActivity = await Activities.findOne({
+        seller_id: product.sellerOwned._id,
+      })
+        .sort({ start_date: 1 })
+        .select("activity_image")
+        .lean();
+      if (firstActivity) {
+        firstActivityImage = firstActivity.activity_image;
+      }
     }
 
     // 確保 product.pay 是陣列，並處理安全訪問
@@ -96,8 +111,14 @@ router.get("/detail/:productId", async (req, res) => {
     // 格式化商品資料
     const formattedData = {
       products_id: product._id,
+      products_format: product.format.map((f) => ({
+        format_id: f._id,
+        format_title: f.title,
+        price: f.price,
+        image: f.image,
+      })),
       products_name: product.productName,
-      products_images: product.image, // 取出所有圖片陣列
+      all_images: product.image, // 取出所有圖片陣列
       products_info: product.introduction,
       production_material: product.ingredient,
       production_method: product.production,
@@ -111,11 +132,16 @@ router.get("/detail/:productId", async (req, res) => {
         product.format && product.format.length > 0
           ? product.format.reduce((acc, curr) => acc + curr.stock, 0)
           : 0, // 計算庫存總數
-      price: product.format[0].price, // 假設取第一種格式的價格
       total_sales: product.sold,
       discount: discount.length > 0 ? discount : null,
-      star: product.reviews ? calculateAverageRating(product.reviews) : 0,
+      star:
+        product.reviews.length > 0
+          ? calculateAverageRating(product.reviews)
+          : 0,
       total_collect: totalCollect,
+      seller_name: product.sellerOwned ? product.sellerOwned.brand : null,
+      seller_id: product.sellerOwned ? product.sellerOwned._id : null,
+      shop_image: firstActivityImage,
     };
 
     res.status(200).json({
