@@ -3,7 +3,7 @@
 /* eslint-disable linebreak-style */
 const handleErrorAsync = require('../service/handleErrorAsync');
 const appError = require('../service/appError');
-const Order = require('../../models/order');
+const Order = require('../models/order');
 const paymentService = require('../service/payment');
 const { config } = require('../service/payment');
 
