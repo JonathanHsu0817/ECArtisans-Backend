@@ -76,6 +76,22 @@ const cart = {
 	},
 	async getCart(req, res) {
 		try {
+			// const userId = req.user._id;
+
+			// // 查找用戶的購物車
+			// const cart = await Cart.findOne({ user: userId }).populate({
+			// 	path: 'items.product',
+			// 	select: 'productName image price fare pay sellerOwned',
+			// 	populate: {
+			// 		path: 'sellerOwned',
+			// 		select: 'brand',
+			// 	},
+			// });
+
+			// if (!cart) {
+			// 	return appError(404, '未找到購物車 ( ˘•ω•˘ )', next);
+			// }
+
 			const userId = req.user._id;
 
 			// 查找用戶的購物車
@@ -89,13 +105,29 @@ const cart = {
 			});
 
 			if (!cart) {
-				return appError(404, '未找到購物車 ( ˘•ω•˘ )', next);
+				return next(appError(404, '未找到購物車 ( ˘•ω•˘ )'));
 			}
+
+			// 分組相同商家的商品
+			const groupedItems = cart.items.reduce((acc, item) => {
+				const sellerId = item.product.sellerOwned._id;
+				if (!acc[sellerId]) {
+					acc[sellerId] = {
+						seller: item.product.sellerOwned,
+						items: [],
+					};
+				}
+				acc[sellerId].items.push(item);
+				return acc;
+			}, {});
+
+			// 將分組後的商品轉換為數組格式
+			const groupedItemsArray = Object.values(groupedItems);
 
 			res.status(200).json({
 				status: true,
 				message: '成功獲取購物車 ( ﾉ>ω<)ﾉ',
-				cart: cart,
+				cart: groupedItemsArray,
 			});
 		} catch (err) {
 			res.status(500).json({
