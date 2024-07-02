@@ -81,7 +81,11 @@ const cart = {
 			// 查找用戶的購物車
 			const cart = await Cart.findOne({ user: userId }).populate({
 				path: 'items.product',
-				select: 'productName image price fare pay',
+				select: 'productName image price fare pay sellerOwned',
+				populate: {
+					path: 'sellerOwned',
+					select: 'brand',
+				},
 			});
 
 			if (!cart) {
