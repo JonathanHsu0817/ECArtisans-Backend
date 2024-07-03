@@ -13,133 +13,133 @@ const orderController = require('../controllers/user/orderControllers');
 
 //商家導覽
 router.get('/:seller_id/home', async (req, res, next) => {
-	const headers = {
+  const headers = {
 		'Access-Control-Allow-Headers':
 			'Content-Type, Authorization, Content-Length, X-Requested-With',
 		'Access-Control-Allow-Origin': '*',
 		'Access-Control-Allow-Methods': 'PATCH, POST, GET,OPTIONS,DELETE',
 		'Content-Type': 'application/json',
-	};
-	try {
-		const seller = req.params.seller_id;
-		const thisShop = await Seller.findOne({ _id: seller });
-		res.writeHead(200, headers);
-		res.write(
-			JSON.stringify({
+  };
+  try {
+    const seller = req.params.seller_id;
+    const thisShop = await Seller.findOne({ _id: seller });
+    res.writeHead(200, headers);
+    res.write(
+      JSON.stringify({
 				status: 'success',
-				thisShop,
-			})
-		);
-		res.end();
-	} catch (err) {
-		res.writeHead(500, headers);
-		res.end(
-			JSON.stringify({
+        thisShop,
+      })
+    );
+    res.end();
+  } catch (err) {
+    res.writeHead(500, headers);
+    res.end(
+      JSON.stringify({
 				status: 'error',
 				message: 'Internal Server Error',
-			})
-		);
-	}
+      })
+    );
+  }
 });
 //商家資訊
 router.get('/:seller_id/information', async (req, res, next) => {
-	const headers = {
+  const headers = {
 		'Access-Control-Allow-Headers':
 			'Content-Type, Authorization, Content-Length, X-Requested-With',
 		'Access-Control-Allow-Origin': '*',
 		'Access-Control-Allow-Methods': 'PATCH, POST, GET,OPTIONS,DELETE',
 		'Content-Type': 'application/json',
-	};
-	try {
-		const seller = req.params.seller_id;
-		const thisShop = await Seller.findOne({ _id: seller }).select({
-			chat: 0,
-			product: 0,
-			order: 0,
-			activity: 0,
-			discount: 0,
-			member: 0,
-			introduce: 0,
-			plan: 0,
-			salesType: 0,
-		});
-		res.writeHead(200, headers);
-		res.write(
-			JSON.stringify({
+  };
+  try {
+    const seller = req.params.seller_id;
+    const thisShop = await Seller.findOne({ _id: seller }).select({
+      chat: 0,
+      product: 0,
+      order: 0,
+      activity: 0,
+      discount: 0,
+      member: 0,
+      introduce: 0,
+      plan: 0,
+      salesType: 0,
+    });
+    res.writeHead(200, headers);
+    res.write(
+      JSON.stringify({
 				status: 'success',
-				thisShop,
-			})
-		);
-		res.end();
-	} catch (err) {
-		res.writeHead(500, headers);
-		res.end(
-			JSON.stringify({
+        thisShop,
+      })
+    );
+    res.end();
+  } catch (err) {
+    res.writeHead(500, headers);
+    res.end(
+      JSON.stringify({
 				status: 'error',
 				message: 'Internal Server Error',
-			})
-		);
-	}
+      })
+    );
+  }
 });
 //修改商家資訊
 router.put('/:seller_id/information', async (req, res, next) => {
-	const {
-		bossName,
-		gender,
-		brand,
-		phone,
-		address,
-		password,
-		otherPassword,
-		collection,
-		salesType,
-		introduce,
-		avatar,
-	} = req.body;
+  const {
+    bossName,
+    gender,
+    brand,
+    phone,
+    address,
+    password,
+    otherPassword,
+    collection,
+    salesType,
+    introduce,
+    avatar,
+  } = req.body;
 
-	const sellerId = req.params.seller_id;
+  const sellerId = req.params.seller_id;
 
-	const updateData = {
-		bossName,
-		gender,
-		brand,
-		phone,
-		address,
-		password,
-		otherPassword,
-		collection,
-		salesType,
-		introduce,
-		avatar,
-	};
+  const updateData = {
+    bossName,
+    gender,
+    brand,
+    phone,
+    address,
+    password,
+    otherPassword,
+    collection,
+    salesType,
+    introduce,
+    avatar,
+  };
 
-	if (req.body.password) {
-		const hashedPassword = await bcrypt.hash(req.body.password, 12);
-		updateData.password = hashedPassword;
-	}
+  if (req.body.password) {
+    const hashedPassword = await bcrypt.hash(req.body.password, 12);
+    updateData.password = hashedPassword;
+  }
 
-	try {
-		const updateUser = await Seller.findByIdAndUpdate(
-			sellerId,
-			{ $set: updateData },
-			{ new: true }
-		);
+  try {
+    const updateUser = await Seller.findByIdAndUpdate(
+      sellerId,
+      { $set: updateData },
+      { new: true }
+    );
 
-		if (!updateUser) {
+    if (!updateUser) {
 			return next(appError(404, '沒有找到該賣家', next));
-		}
+    }
 
-		// 建議再加其他的middleware  像是沒有加入圖片、前後資料少帶之類的
+    // 建議再加其他的middleware  像是沒有加入圖片、前後資料少帶之類的
 
-		res.status(200).json({
+    res.status(200).json({
 			status: 'success',
 			message: '成功修改資料',
-			data: updateUser,
-		});
-	} catch (err) {
-		console.error(err);
+      data: updateUser,
+    });
+  } catch (err) {
+    console.error(err);
 		res.status(500).json({ status: 'error', message: 'Internal Server Error' });
-	}
+  }
 });
 
 //訂單管理
@@ -184,141 +184,140 @@ router.get('/order/:orderId', isAuth, orderController.getSellerOrderDetail);
 //商品資訊
 router.get(
 	'/products/all',
-	isAuth,
+  isAuth,
 	restriction('seller'),
-	shopControllers.products.getProductsAll
+  shopControllers.products.getProductsAll
 );
 router.get(
 	'/products',
-	isAuth,
+  isAuth,
 	restriction('seller'),
-	shopControllers.products.getProducts
+  shopControllers.products.getProducts
 );
 router.get(
 	'/product/:product_id',
-	isAuth,
+  isAuth,
 	restriction('seller'),
-	shopControllers.products.getProduct
+  shopControllers.products.getProduct
 );
 router.post(
 	'/product',
-	isAuth,
+  isAuth,
 	restriction('seller'),
-	shopControllers.products.createProduct
+  shopControllers.products.createProduct
 );
 router.put(
 	'/product/:product_id',
-	isAuth,
+  isAuth,
 	restriction('seller'),
-	shopControllers.products.updateProduct
+  shopControllers.products.updateProduct
 );
 router.delete(
 	'/product/:product_id',
-	isAuth,
+  isAuth,
 	restriction('seller'),
-	shopControllers.products.deleteProduct
+  shopControllers.products.deleteProduct
 );
 
 //折價券資訊
 router.get(
 	'/coupons/all',
-	isAuth,
+  isAuth,
 	restriction('seller'),
-	shopControllers.coupons.getCouponsAll
+  shopControllers.coupons.getCouponsAll
 );
 router.get(
 	'/coupons',
-	isAuth,
+  isAuth,
 	restriction('seller'),
-	shopControllers.coupons.getCoupons
+  shopControllers.coupons.getCoupons
 );
 router.get(
 	'/coupon/:coupon_id',
-	isAuth,
+  isAuth,
 	restriction('seller'),
-	shopControllers.coupons.getCoupon
+  shopControllers.coupons.getCoupon
 );
 router.post(
 	'/coupon',
-	isAuth,
+  isAuth,
 	restriction('seller'),
-	shopControllers.coupons.createCoupon
+  shopControllers.coupons.createCoupon
 );
 router.put(
 	'/coupon/:coupon_id',
-	isAuth,
+  isAuth,
 	restriction('seller'),
-	shopControllers.coupons.updateCoupon
+  shopControllers.coupons.updateCoupon
 );
 router.delete(
 	'/coupon/:coupon_id',
-	isAuth,
+  isAuth,
 	restriction('seller'),
-	shopControllers.coupons.deleteCoupon
+  shopControllers.coupons.deleteCoupon
 );
 
 // 活動管理
 
 // 賣家後台取得所有活動
 router.get("/activities", isAuth, restriction("seller"), async (req, res) => {
-	// 頁碼預設為1、單頁資料筆數預設為5
-	const { page = 1, limit = 5 } = req.query;
-  
-	try {
-	  const activities = await Activities.find({ seller_id: req.user._id })
-		.skip((page - 1) * limit)
-		.limit(parseInt(limit));
-  
-	  const total_data = await Activities.countDocuments({ seller_id: req.user._id });
-	  const totalPages = Math.ceil(total_data / limit);
-  
-	 // 格式化活動資料為所需格式
-	 const formattedActivities = activities.map(activity => ({
-	  activity_id: activity._id,
-	  activity_name: activity.activity_name,
-	  activity_image: activity.activity_image,
-	  start_date: activity.start_date,
-	  end_date: activity.end_date
-	 }));
-		
-	  res.status(200).json({
-		page: parseInt(page),
-		limit: parseInt(limit),
-		total_data,
-		totalPages,
-		data: formattedActivities,
-	  });
-	} catch (error) {
-	  res.status(500).json({ message: error.message });
-	}
-  });
-  
-  // 賣家後台取得單一活動
-  router.get("/activities/:id", isAuth, restriction("seller"), async (req, res) => {
-	try {
-	  const activity = await Activities.findOne({
-		_id: req.params.id,
-		seller_id: req.user._id,
-	  });
-		
-		
-	  if (!activity) {
-		return res.status(404).json({ message: "查無資料" });
-		}
+  // 單頁資料筆數預設為5
+  const { limit = 5 } = req.query;
 
-		const formattedActivity = {
-			activity_name: activity.activity_name,
-			activity_image: activity.activity_image,
-			start_date: activity.start_date,
-			end_date: activity.end_date,
-			activity_info: activity.activity_info,
-			coupon_id: activity.coupon_id,
-		};
+  try {
+    const activities = await Activities.find({ seller_id: req.user._id }).limit(
+      parseInt(limit)
+    );
+
+    const total_data = await Activities.countDocuments({
+      seller_id: req.user._id,
+    });
+
+    // 格式化活動資料為所需格式
+    const formattedActivities = activities.map((activity) => ({
+      activity_id: activity._id,
+      activity_name: activity.activity_name,
+      activity_image: activity.activity_image,
+      start_date: activity.start_date,
+      end_date: activity.end_date,
+    }));
+
+    res.status(200).json({
+      limit: parseInt(limit),
+      total: total_data,
+      data: formattedActivities,
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// 賣家後台取得單一活動
+  router.get("/activities/:id", isAuth, restriction("seller"), async (req, res) => {
+    try {
+      const activity = await Activities.findOne({
+        _id: req.params.id,
+        seller_id: req.user._id,
+      });
 		
-	  res.status(200).json(formattedActivity);
-	} catch (error) {
-	  res.status(500).json({ message: error.message });
-	}
+
+      if (!activity) {
+        return res.status(404).json({ message: "查無資料" });
+      }
+
+      const formattedActivity = {
+        activity_name: activity.activity_name,
+        activity_image: activity.activity_image,
+        start_date: activity.start_date,
+        end_date: activity.end_date,
+        activity_info: activity.activity_info,
+        coupon_id: activity.coupon_id,
+      };
+
+      res.status(200).json(formattedActivity);
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
   });
 
 module.exports = router;
