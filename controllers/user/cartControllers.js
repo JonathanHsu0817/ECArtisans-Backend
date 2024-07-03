@@ -136,23 +136,27 @@ const cart = {
 			});
 		}
 	},
-	async chooseSelectedCart(req, res) {
+	async chooseSelectedCart(req, res, next) {
 		try {
 			const userId = req.user._id;
 			const { selectedItems } = req.body;
 
 			if (!selectedItems || !Array.isArray(selectedItems)) {
-				return appError(400, '無效的選擇項目 ( ˘•ω•˘ )', next);
+				return next(appError(400, '無效的選擇項目 ( ˘•ω•˘ )'));
 			}
 
 			// 查找用戶的購物車
 			const cart = await Cart.findOne({ user: userId }).populate({
 				path: 'items.product',
-				select: 'productName image price fare pay',
+				select: 'productName image price fare pay sellerOwned',
+				populate: {
+					path: 'sellerOwned',
+					select: 'brand',
+				},
 			});
 
 			if (!cart) {
-				return appError(404, '未找到購物車 ( ˘•ω•˘ )', next);
+				return next(appError(404, '未找到購物車 ( ˘•ω•˘ )'));
 			}
 
 			const filteredItems = cart.items.filter((cartItem) =>
@@ -169,6 +173,22 @@ const cart = {
 					message: '選定的商品在購物車中不存在 ( ˘•ω•˘ )',
 				});
 			}
+
+			// 分組相同商家的商品
+			const groupedItems = filteredItems.reduce((acc, item) => {
+				const sellerId = item.product.sellerOwned._id;
+				if (!acc[sellerId]) {
+					acc[sellerId] = {
+						seller: item.product.sellerOwned,
+						items: [],
+					};
+				}
+				acc[sellerId].items.push(item);
+				return acc;
+			}, {});
+
+			// 將分組後的商品轉換為數組格式
+			const groupedItemsArray = Object.values(groupedItems);
 
 			// 計算共同支付方式
 			let payMethods = [1, 2, 3]; // 默認支付方式
@@ -192,12 +212,13 @@ const cart = {
 			res.status(200).json({
 				status: true,
 				message: '成功獲取選定商品的信息 ( ﾉ>ω<)ﾉ',
-				selectedItems: filteredItems,
+				groupedItems: groupedItemsArray,
 				payMethods,
 				fare: maxFare,
 				totalPrice,
 			});
 		} catch (err) {
+			console.log(err);
 			res.status(500).json({
 				status: false,
 				message: '出現錯誤捏，再重新試一次看看 ( ˘•ω•˘ )',
