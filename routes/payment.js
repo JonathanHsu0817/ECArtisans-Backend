@@ -10,7 +10,7 @@ router.post('/', paymentController.initiatePayment);
 
 router.post('/user', isAuth, paymentController.initiateOrderPayment);
 
-router.post('/return', paymentController.handlePaymentReturnUrl);
+router.get('/return', paymentController.handlePaymentReturnUrl);
 
 router.post('/notify', paymentController.handlePaymentResult);
 
