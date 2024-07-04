@@ -3,7 +3,7 @@ let router = express.Router();
 const Product = require("../models/product");
 const Seller = require("../models/seller"); // 引入賣家模型
 
-/* GET home page. */
+// 商品搜尋
 router.get("/products", async (req, res) => {
   try {
     const { keyword } = req.query;
@@ -12,44 +12,69 @@ router.get("/products", async (req, res) => {
       return res.status(400).json({ status: false, message: "請提供關鍵字" });
     }
 
-    // 使用正則表達式進行部分匹配搜索，並且填充 sellerOwned 字段
+    // 查詢商品名稱中包含關鍵字且已上架的商品
     const products = await Product.find({
-      productName: { $regex: keyword, $options: "i" },
-    }).populate({
-      path: "sellerOwned",
-      select: "bossName",
-      model: Seller,
-    });
+      productName: { $regex: keyword, $options: "i" }, // 使用正則表達式忽略大小寫進行匹配
+      isOnshelf: true, // 只查詢已上架的商品
+    })
+      .populate({
+        path: "sellerOwned",
+        select: "brand",
+        model: Seller,
+      })
+      .lean();
 
-    // 格式化返回結果
-    const result = products.map((product) => {
-      let sellerName = "Unknown Seller";
-      if (product.sellerOwned) {
-        sellerName = product.sellerOwned.bossName; // 使用賣家的 bossName 屬性作為名稱
+    if (!products || products.length === 0) {
+      return res.status(404).json({ message: "無商品符合關鍵字" });
+    }
+
+    // 格式化商品資料
+    const formattedData = products.map((product) => {
+      const discount = [];
+
+      if (product.tags && Array.isArray(product.tags)) {
+        if (product.tags.includes(0)) {
+          discount.push("免運券");
+        }
+        if (product.tags.includes(1)) {
+          discount.push("折抵券");
+        }
       }
+
+      const products_format = product.format.map((fmt) => ({
+        format_id: fmt._id,
+        format_price: fmt.price,
+        format_color: fmt.color,
+      }));
+
+      const prices = product.format.map((fmt) => fmt.price);
+      const minPrice = Math.min(...prices);
+      const maxPrice = Math.max(...prices);
+      const price = minPrice === maxPrice ? [minPrice] : [minPrice, maxPrice];
+
       return {
         products_id: product._id,
         products_name: product.productName,
-        products_images: product.image ? product.image[0] : "", // 假設使用第一張圖片
-        seller_name: sellerName,
-        price: product.fare,
+        products_image: product.image[0], // 假設這裡取第一張圖片
+        shop_name: product.sellerOwned.brand,
+        price: price,
+        origin: product.origin,
         total_sales: product.sold,
-        discount: product.tags.includes(0)
-          ? "免運券"
-          : product.tags.includes(1)
-          ? "折抵券"
-          : "",
-        star: product.reviews.length
-          ? product.reviews.reduce((acc, review) => acc + review.star, 0) /
-            product.reviews.length
-          : 0,
+        discount: discount.length > 0 ? discount : null,
+        star:
+          product.reviews.length > 0
+            ? calculateAverageRating(product.reviews)
+            : 0, // 假設需要計算平均評分的函式
+        products_format: products_format,
       };
     });
 
-    res.json({ status: true, data: result });
+    res.status(200).json({
+      status: true,
+      data: formattedData,
+    });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ status: false, message: "伺服器錯誤" });
+    res.status(500).json({ message: error.message });
   }
 });
 
