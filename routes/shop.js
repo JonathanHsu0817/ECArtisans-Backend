@@ -12,14 +12,7 @@ const bcrypt = require('bcrypt'); //加密套件
 const orderController = require('../controllers/user/orderControllers');
 
 //商家導覽
-router.get('/:seller_id/home', async (req, res, next) => {
-	const headers = {
-		'Access-Control-Allow-Headers':
-			'Content-Type, Authorization, Content-Length, X-Requested-With',
-		'Access-Control-Allow-Origin': '*',
-		'Access-Control-Allow-Methods': 'PATCH, POST, GET,OPTIONS,DELETE',
-		'Content-Type': 'application/json',
-	};
+router.get('/home', isAuth, async (req, res, next) => {
 	try {
 		const seller = req.params.seller_id;
 		const thisShop = await Seller.findOne({ _id: seller });
@@ -42,47 +35,46 @@ router.get('/:seller_id/home', async (req, res, next) => {
 	}
 });
 //商家資訊
-router.get('/:seller_id/information', async (req, res, next) => {
-	const headers = {
-		'Access-Control-Allow-Headers':
-			'Content-Type, Authorization, Content-Length, X-Requested-With',
-		'Access-Control-Allow-Origin': '*',
-		'Access-Control-Allow-Methods': 'PATCH, POST, GET,OPTIONS,DELETE',
-		'Content-Type': 'application/json',
-	};
+
+router.get('/information', isAuth, async (req, res, next) => {
 	try {
-		const seller = req.params.seller_id;
-		const thisShop = await Seller.findOne({ _id: seller }).select({
-			chat: 0,
-			product: 0,
-			order: 0,
-			activity: 0,
-			discount: 0,
-			member: 0,
-			introduce: 0,
-			plan: 0,
-			salesType: 0,
+		const sellerId = req.user._id;
+		const thisShop = await Seller.findById(sellerId).select({
+			bossName: 1,
+			gender: 1,
+			phone: 1,
+			mail: 1,
+			brand: 1,
+			avatar: 1,
+			planPeriod: 1,
+			address: 1,
+			collection: 1,
+			salesType: 1,
 		});
-		res.writeHead(200, headers);
-		res.write(
-			JSON.stringify({
-				status: 'success',
-				thisShop,
-			})
-		);
-		res.end();
-	} catch (err) {
-		res.writeHead(500, headers);
-		res.end(
-			JSON.stringify({
+
+		if (!thisShop) {
+			return res.status(404).json({
 				status: 'error',
-				message: 'Internal Server Error',
-			})
-		);
+				message: '未找到賣家信息',
+			});
+		}
+
+		res.status(200).json({
+			status: 'success',
+			thisShop,
+		});
+	} catch (err) {
+		console.error(err);
+		res.status(500).json({
+			status: 'error',
+			message: 'Internal Server Error',
+		});
 	}
 });
+
 //修改商家資訊
-router.put('/:seller_id/information', async (req, res, next) => {
+router.put('/information', isAuth, async (req, res, next) => {
+	const sellerId = req.user._id;
 	const {
 		bossName,
 		gender,
@@ -96,8 +88,6 @@ router.put('/:seller_id/information', async (req, res, next) => {
 		introduce,
 		avatar,
 	} = req.body;
-
-	const sellerId = req.params.seller_id;
 
 	const updateData = {
 		bossName,
