@@ -132,9 +132,29 @@ router.get("/recommend-shop", async (req, res) => {
   try {
     const limit = parseInt(req.query.limit) || 0; // 從請求參數中取得限制數量，預設為0（撈所有資料）
 
-    // 隨機排序並取得賣家資料
-    const sellers = await Seller.aggregate([
-      { $sample: { size: limit > 0 ? limit : await Seller.countDocuments() } }, // 隨機選取指定數量的文件
+    // 查詢每個賣家的商品數量並過濾掉商品數量為零的賣家
+    const sellersWithProducts = await Seller.aggregate([
+      {
+        $lookup: {
+          from: "products",
+          localField: "_id",
+          foreignField: "sellerOwned",
+          as: "products",
+        },
+      },
+      {
+        $addFields: {
+          productCount: { $size: "$products" },
+        },
+      },
+      {
+        $match: {
+          productCount: { $gt: 0 }, // 過濾商品數量大於零的賣家
+        },
+      },
+      {
+        $sample: { size: limit > 0 ? limit : await Seller.countDocuments() },
+      },
       {
         $project: {
           bossName: 1,
@@ -142,27 +162,38 @@ router.get("/recommend-shop", async (req, res) => {
           avatar: 1,
           star: 1,
           total_comments: 1,
+          products: 1,
         },
-      }, // 選取需要的欄位
+      },
     ]);
 
-    // 查詢每個賣家的商品圖片
+    // 查詢每個賣家的商品圖片和第一個活動的圖片
     const formattedSellers = await Promise.all(
-      sellers.map(async (seller) => {
-        const products = await Product.find({ sellerOwned: seller._id })
-          .select("image")
-          .limit(3)
-          .lean();
-
+      sellersWithProducts.map(async (seller) => {
+        const products = seller.products.slice(0, 3);
         const product_images = products
           .map((product) => product.image[0])
           .filter(Boolean);
 
+        // 查詢賣家第一個活動的圖片
+        const firstActivity = await Activities.findOne({ seller_id: seller._id })
+          .sort({ start_date: 1 })
+          .select("activity_image")
+          .lean();
+
+        const first_activity_image = firstActivity
+          ? firstActivity.activity_image
+          : null;
+
         return {
           seller_id: seller._id,
           shop_name: seller.brand,
-          shop_image: seller.avatar,
+          seller_avatar: seller.avatar,
           product_images: product_images, // 取出最多三個不同商品的第一張圖片
+          shop_image:
+            first_activity_image === null
+              ? seller.avatar
+              : first_activity_image, // 取出第一個活動的圖片
           // TODO:star跟 total_comments要從review取資料去算
           star: seller.star || 0,
           total_comments: seller.total_comments || 0,

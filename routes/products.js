@@ -9,20 +9,20 @@ router.get("/:category", async (req, res) => {
   try {
     const selectedCategory = req.params.category;
 
-    // 查詢該種類下的所有商品
+    // 查詢該種類下的所有已上架商品
     const products = await Product.find({
       sellerCategory: { $in: [selectedCategory] },
       isOnshelf: true, // 只查詢已上架的商品
     })
       .populate({
         path: "sellerOwned",
-        select: "bossName",
+        select: "brand",
         model: Seller,
       })
       .lean();
 
     if (!products || products.length === 0) {
-      return res.status(404).json({ message: "No products found" });
+      return res.status(404).json({ message: "查無商品" });
     }
 
     // 格式化商品資料
@@ -37,18 +37,32 @@ router.get("/:category", async (req, res) => {
           discount.push("折抵券");
         }
       }
+
+      const products_format = product.format.map((fmt) => ({
+        format_id: fmt._id,
+        format_price: fmt.price,
+        format_color: fmt.color,
+      }));
+
+      const prices = product.format.map((fmt) => fmt.price);
+      const minPrice = Math.min(...prices);
+      const maxPrice = Math.max(...prices);
+      const price = minPrice === maxPrice ? [minPrice] : [minPrice, maxPrice];
+
       return {
         products_id: product._id,
         products_name: product.productName,
-        products_images: product.image[0], // 假設這裡取第一張圖片
-        seller_name: product.sellerOwned.bossName,
-        price: product.format[0].price,
+        products_image: product.image[0], // 假設這裡取第一張圖片
+        shop_name: product.sellerOwned.brand,
+        price: price,
         total_sales: product.sold,
         discount: discount.length > 0 ? discount : null,
         star:
           product.reviews.length > 0
             ? calculateAverageRating(product.reviews)
             : 0, // 假設需要計算平均評分的函式
+        products_format: products_format,
+        origin: product.origin,
       };
     });
 
@@ -70,7 +84,7 @@ router.get("/detail/:productId", async (req, res) => {
     const product = await Product.findById(productId)
       .populate({
         path: "sellerOwned",
-        select: "brand _id", // 選擇 bossName 和 _id
+        select: "brand avatar _id", // 選擇 bossName 和 _id
         model: Seller,
       })
       .lean();
@@ -141,6 +155,7 @@ router.get("/detail/:productId", async (req, res) => {
       total_collect: totalCollect,
       seller_name: product.sellerOwned ? product.sellerOwned.brand : null,
       seller_id: product.sellerOwned ? product.sellerOwned._id : null,
+      seller_avatar: product.sellerOwned ? product.sellerOwned.avatar : null,
       shop_image: firstActivityImage,
     };
 
