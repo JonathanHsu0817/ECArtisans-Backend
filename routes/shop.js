@@ -50,6 +50,7 @@ router.get('/information', isAuth, async (req, res, next) => {
 			address: 1,
 			collection: 1,
 			salesType: 1,
+			introduce: 1,
 		});
 
 		if (!thisShop) {
@@ -79,6 +80,7 @@ router.put('/information', isAuth, async (req, res, next) => {
 		bossName,
 		gender,
 		brand,
+		avatar,
 		phone,
 		address,
 		password,
@@ -86,13 +88,13 @@ router.put('/information', isAuth, async (req, res, next) => {
 		collection,
 		salesType,
 		introduce,
-		avatar,
 	} = req.body;
 
 	const updateData = {
 		bossName,
 		gender,
 		brand,
+		avatar,
 		phone,
 		address,
 		password,
@@ -100,7 +102,6 @@ router.put('/information', isAuth, async (req, res, next) => {
 		collection,
 		salesType,
 		introduce,
-		avatar,
 	};
 
 	if (req.body.password) {
