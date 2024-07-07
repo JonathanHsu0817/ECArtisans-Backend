@@ -101,7 +101,7 @@ const products = {
 				format,
 				introduction,
 				production,
-				isOnShelf,
+				isOnshelf,
 				fare,
 				pay,
 				keyword,
@@ -124,7 +124,7 @@ const products = {
 					format: updatedFormats,
 					introduction,
 					production,
-					isOnShelf,
+					isOnshelf,
 					fare,
 					pay,
 					keyword,
@@ -162,7 +162,7 @@ const products = {
 				format,
 				introduction,
 				production,
-				isOnShelf,
+				isOnshelf,
 				fare,
 				pay,
 				keyword,
@@ -187,7 +187,7 @@ const products = {
 						format: updatedFormat,
 						introduction,
 						production,
-						isOnShelf,
+						isOnshelf,
 						fare,
 						pay,
 						keyword,
@@ -218,15 +218,14 @@ const products = {
 		try {
 			const productID = req.params.product_id;
 			const sellerOwned = req.user._id;
-			const { isOnShelf } = req.body;
-
+			const { isOnshelf } = req.body;
 			const updatedProductStatus = await Products.findOneAndUpdate(
 				{ _id: productID, sellerOwned },
-				{ isOnShelf },
+				{ isOnshelf },
 				{ new: true, runValidators: true }
 			);
 
-			if (!updatedProduct) {
+			if (!updatedProductStatus) {
 				return res.status(404).json({
 					status: false,
 					message: '更新商品失敗了 ( ˘•ω•˘ )',

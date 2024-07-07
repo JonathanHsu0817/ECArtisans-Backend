@@ -206,7 +206,8 @@ router.put(
 router.patch(
 	'/product/:product_id',
 	isAuth,
-	restriction('seller', shopControllers.products.updateProductStatus)
+	restriction('seller'),
+	shopControllers.products.updateProductStatus
 );
 router.delete(
 	'/product/:product_id',
