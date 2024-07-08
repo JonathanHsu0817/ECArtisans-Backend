@@ -9,7 +9,7 @@ const appError = require('../../service/appError');
 const mongoose = require('mongoose');
 
 const order = {
-	async createOrder(req, res, next) {
+	async createOrder(req, res) {
 		try {
 			const userId = req.user._id;
 			const { selectedItems, address, delivery, pay, fare, couponId } =
