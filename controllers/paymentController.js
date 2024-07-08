@@ -45,7 +45,7 @@ const initiateOrderPayment = handleErrorAsync(async (req, res, next) => {
 
 	const order = await Order.findOne({ _id: orderId, user: userId });
 	// const order = await Order.findById(orderId);
-	console.log(order);
+	console.log('order', order);
 	if (!order) {
 		return next(appError(404, '訂單不存在'));
 	}
@@ -62,7 +62,7 @@ const initiateOrderPayment = handleErrorAsync(async (req, res, next) => {
 		ReturnURL: config.ReturnUrl,
 		NotifyURL: config.NotifyUrl,
 	};
-	console.log(paymentData);
+	console.log('付款資料格式:', paymentData);
 
 	const paymentInfo = await paymentService.initiatePayment(paymentData);
 
