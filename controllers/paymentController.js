@@ -62,6 +62,7 @@ const initiateOrderPayment = handleErrorAsync(async (req, res, next) => {
 		ReturnURL: config.ReturnUrl,
 		NotifyURL: config.NotifyUrl,
 	};
+	console.log(paymentData);
 
 	const paymentInfo = await paymentService.initiatePayment(paymentData);
 
