@@ -4,128 +4,27 @@ const User = require('../../models/user');
 const Seller = require('../../models/seller');
 const Review = require('../../models/review');
 const Product = require('../../models/product');
+const Coupon = require('../../models/coupon');
 const appError = require('../../service/appError');
 const mongoose = require('mongoose');
 
 const order = {
-	// async createOrder(req, res) {
-	// 	try {
-	// 		const userId = req.user._id;
-	// 		const { selectedItems, address, delivery, pay, fare } = req.body;
-
-	// 		if (!address || !delivery || !pay || !fare) {
-	// 			return appError(400, '地址、配送方式、支付方式和運費不能為空', next);
-	// 		}
-
-	// 		const cart = await Cart.findOne({ user: userId }).populate({
-	// 			path: 'items.product',
-	// 			select: 'productName price sellerOwned fare pay',
-	// 		});
-
-	// 		if (!cart || cart.items.length === 0) {
-	// 			return appError(400, '購物車為空的，無法創建訂單 ( ˘•ω•˘ )', next);
-	// 		}
-
-	// 		// 驗證並過濾
-	// 		const orderItems = [];
-	// 		let sellerId = '';
-	// 		let totalPrice = 0;
-
-	// 		selectedItems.forEach((item) => {
-	// 			const cartItem = cart.items.find(
-	// 				(cartItem) =>
-	// 					cartItem.product._id.toString() === item.productId &&
-	// 					cartItem.format._id.toString() === item.formatId
-	// 			);
-
-	// 			if (!cartItem) {
-	// 				return appError(400, '選定的商品在購物車中不存在 ( ˘•ω•˘ )', next);
-	// 			}
-
-	// 			if (sellerId && sellerId !== cartItem.product.sellerOwned.toString()) {
-	// 				return appError(400, '選定的商品必須屬於同一商家 ( ˘•ω•˘ )', next);
-	// 			}
-
-	// 			sellerId = cartItem.product.sellerOwned.toString();
-
-	// 			orderItems.push({
-	// 				product: cartItem.product._id,
-	// 				format: cartItem.format,
-	// 				quantity: cartItem.quantity,
-	// 				price: cartItem.price,
-	// 			});
-
-	// 			totalPrice += cartItem.price;
-	// 		});
-
-	// 		// 創建訂單;
-	// 		const newOrder = await Order.create({
-	// 			user: userId,
-	// 			seller: sellerId,
-	// 			products: orderItems,
-	// 			state: 0, // 未付
-	// 			totalPrice,
-	// 			pay,
-	// 			address,
-	// 			delivery,
-	// 			fare,
-	// 		});
-	// 		// 更新用戶的訂單列表
-	// 		await User.findByIdAndUpdate(userId, {
-	// 			$push: { spHistory: newOrder._id },
-	// 		});
-
-	// 		// 更新賣家的訂單列表
-	// 		await Seller.findByIdAndUpdate(sellerId, {
-	// 			$push: { order: newOrder._id },
-	// 		});
-
-	// 		// 購物車移除已選的商品
-	// 		cart.items = cart.items.filter(
-	// 			(cartItem) =>
-	// 				!selectedItems.some(
-	// 					(item) =>
-	// 						item.productId === cartItem.product._id.toString() &&
-	// 						item.formatId === cartItem.format._id.toString()
-	// 				)
-	// 		);
-
-	// 		cart.totalPrice = cart.items.reduce(
-	// 			(total, item) => total + item.price,
-	// 			0
-	// 		);
-	// 		await cart.save();
-
-	// 		res.status(201).json({
-	// 			status: true,
-	// 			message: '訂單創立成功 ( ﾉ>ω<)ﾉ',
-	// 			order: newOrder,
-	// 		});
-	// 	} catch (err) {
-	// 		console.log(err);
-	// 		res.status(500).json({
-	// 			status: false,
-	// 			message: '出現錯誤捏，再重新試一次看看 ( ˘•ω•˘ )',
-	// 		});
-	// 	}
-	// },
-
-	async createOrder(req, res) {
+	async createOrder(req, res, next) {
 		try {
 			const userId = req.user._id;
-			const { groupedItems, address, delivery, pay, fare } = req.body;
+			const { selectedItems, address, delivery, pay, fare, couponId } =
+				req.body;
 
 			if (
-				!groupedItems ||
-				!Array.isArray(groupedItems) ||
-				!address ||
-				!delivery ||
-				!pay ||
-				!fare
+				!selectedItems ||
+				!Array.isArray(selectedItems) ||
+				selectedItems.length === 0
 			) {
-				return next(
-					appError(400, '地址、配送方式、支付方式和運費不能為空', next)
-				);
+				return next(appError(400, '無效的選擇項目 ( ˘•ω•˘ )'));
+			}
+
+			if (!address || !delivery || !pay || !fare) {
+				return next(appError(400, '地址、配送方式、支付方式和運費不能為空'));
 			}
 
 			const cart = await Cart.findOne({ user: userId }).populate({
@@ -134,17 +33,15 @@ const order = {
 			});
 
 			if (!cart || cart.items.length === 0) {
-				return next(
-					appError(400, '購物車為空的，無法創建訂單 ( ˘•ω•˘ )', next)
-				);
+				return next(appError(400, '購物車為空的，無法創建訂單 ( ˘•ω•˘ )'));
 			}
 
-			// 验证并过滤
+			// 驗證並過濾
 			const orderItems = [];
 			let sellerId = '';
 			let totalPrice = 0;
 
-			groupedItems.forEach((item) => {
+			for (const item of selectedItems) {
 				const cartItem = cart.items.find(
 					(cartItem) =>
 						cartItem.product._id.toString() === item.productId &&
@@ -152,15 +49,11 @@ const order = {
 				);
 
 				if (!cartItem) {
-					return next(
-						appError(400, '選定的商品在購物車中不存在 ( ˘•ω•˘ )', next)
-					);
+					return next(appError(400, '選定的商品在購物車中不存在 ( ˘•ω•˘ )'));
 				}
 
 				if (sellerId && sellerId !== cartItem.product.sellerOwned.toString()) {
-					return next(
-						appError(400, '選定的商品必須屬於同一商家 ( ˘•ω•˘ )', next)
-					);
+					return next(appError(400, '選定的商品必須屬於同一商家 ( ˘•ω•˘ )'));
 				}
 
 				sellerId = cartItem.product.sellerOwned.toString();
@@ -172,10 +65,39 @@ const order = {
 					price: cartItem.price,
 				});
 
-				totalPrice += cartItem.price * cartItem.quantity;
-			});
+				totalPrice += cartItem.price;
+			}
 
-			// 创建订单
+			let discountAmount = 0;
+			if (couponId) {
+				const coupon = await Coupon.findOne({ _id: couponId, user: userId });
+
+				if (
+					!coupon ||
+					!coupon.isEnabled ||
+					(coupon.endDate && coupon.endDate < Date.now())
+				) {
+					return next(appError(400, '无效的优惠券ID'));
+				}
+
+				// 检查优惠券是否适用于所选商品
+				const applicableItems = orderItems.filter((item) =>
+					coupon.productChoose.includes(item.product.toString())
+				);
+
+				if (applicableItems.length === 0) {
+					return next(appError(400, '优惠券不适用于选定的商品'));
+				}
+
+				// 计算折扣金额
+				discountAmount =
+					coupon.type === 1 ? (coupon.percentage * totalPrice) / 100 : 0;
+				totalPrice -= discountAmount;
+
+				if (totalPrice < 0) totalPrice = 0; // 确保总价不小于零
+			}
+
+			// 創建訂單
 			const newOrder = await Order.create({
 				user: userId,
 				seller: sellerId,
@@ -188,20 +110,20 @@ const order = {
 				fare,
 			});
 
-			// 更新用户的订单列表
+			// 更新用戶的訂單列表
 			await User.findByIdAndUpdate(userId, {
 				$push: { spHistory: newOrder._id },
 			});
 
-			// 更新卖家的订单列表
+			// 更新賣家的訂單列表
 			await Seller.findByIdAndUpdate(sellerId, {
 				$push: { order: newOrder._id },
 			});
 
-			// 购物车移除已选的商品
+			// 購物車移除已選的商品
 			cart.items = cart.items.filter(
 				(cartItem) =>
-					!groupedItems.some(
+					!selectedItems.some(
 						(item) =>
 							item.productId === cartItem.product._id.toString() &&
 							item.formatId === cartItem.format._id.toString()
@@ -212,6 +134,7 @@ const order = {
 				(total, item) => total + item.price,
 				0
 			);
+
 			await cart.save();
 
 			res.status(201).json({

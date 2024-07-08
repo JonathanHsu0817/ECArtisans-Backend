@@ -1,8 +1,3 @@
-/* eslint-disable import/no-extraneous-dependencies */
-/* eslint-disable comma-dangle */
-/* eslint-disable indent */
-/* eslint-disable import/no-unresolved */
-/* eslint-disable no-tabs */
 const dotenv = require('dotenv');
 
 dotenv.config({ path: './config.env' });

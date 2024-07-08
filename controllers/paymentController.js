@@ -7,7 +7,7 @@ const Order = require('../models/order');
 const paymentService = require('../service/payment');
 const { config } = require('../service/payment');
 
-const orders = {};
+// const orders = {};
 
 const initiatePayment = handleErrorAsync(async (req, res, next) => {
 	const { email, Amt, ItemDesc } = req.body;
@@ -40,10 +40,12 @@ const initiatePayment = handleErrorAsync(async (req, res, next) => {
 });
 
 const initiateOrderPayment = handleErrorAsync(async (req, res, next) => {
+	const userId = req.user._id;
 	const { orderId } = req.body;
-	// console.log(email, Amt, ItemDesc);
 
-	const order = await Order.findById(orderId);
+	const order = await Order.findOne({ _id: orderId, user: userId });
+	// const order = await Order.findById(orderId);
+	console.log(order);
 	if (!order) {
 		return next(appError(404, '訂單不存在'));
 	}
@@ -53,7 +55,7 @@ const initiateOrderPayment = handleErrorAsync(async (req, res, next) => {
 		RespondType: 'JSON',
 		TimeStamp: Date.now(),
 		Version: config.Version,
-		MerchantOrderNo: `${Date.now()}`,
+		MerchantOrderNo: `${order._id}`,
 		Amt: order.totalPrice + order.fare,
 		ItemDesc: `ECArtisans訂單${order._id}`,
 		Email: req.user.email,
@@ -76,7 +78,7 @@ const handlePaymentReturnUrl = handleErrorAsync(async (req, res, next) => {
 });
 
 const handlePaymentResult = handleErrorAsync(async (req, res, next) => {
-	console.log('req.body notify data', req.body);
+	// console.log('req.body notify data', req.body);
 	const { TradeInfo } = req.body;
 	const decryptedInfo = paymentService.createSesDecrypt(TradeInfo);
 	console.log('data:', decryptedInfo);
@@ -90,7 +92,7 @@ const handlePaymentResult = handleErrorAsync(async (req, res, next) => {
 	});
 
 	const updatedOrder = await Order.findOneAndUpdate(
-		{ MerchantOrderNo },
+		{ _id: MerchantOrderNo },
 		{
 			TradeNo,
 			PayTime,
@@ -98,6 +100,8 @@ const handlePaymentResult = handleErrorAsync(async (req, res, next) => {
 		},
 		{ new: true }
 	);
+
+	console.log('寫入後:', updatedOrder);
 
 	if (!updatedOrder) {
 		return next(appError(404, '找不到訂單 ( ˘•ω•˘ )'));

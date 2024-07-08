@@ -1,4 +1,3 @@
-// eslint-disable-next-line linebreak-style
 const express = require('express');
 
 const router = express.Router();

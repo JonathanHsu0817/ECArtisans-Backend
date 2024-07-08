@@ -84,7 +84,6 @@ const orderSchema = new Schema(
 		MerchantOrderNo: {
 			//當送貨編號
 			type: String,
-			required: true,
 		},
 		TradeNo: {
 			//交易號碼

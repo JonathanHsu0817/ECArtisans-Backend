@@ -345,6 +345,95 @@ const cart = {
 			});
 		}
 	},
+	async validateCoupon(req, res) {
+		try {
+			const userId = req.user._id;
+			const { productIds, couponId } = req.body;
+
+			if (
+				!productIds ||
+				!Array.isArray(productIds) ||
+				productIds.length === 0
+			) {
+				return res.status(400).json({
+					status: false,
+					message: '無效的商品ID列表',
+				});
+			}
+
+			// 查找用戶及其優惠券
+			const userData = await User.findById(userId).populate('discount');
+			if (!userData) {
+				return res.status(404).json({
+					status: false,
+					message: '用戶未找到',
+				});
+			}
+
+			// 查找所有商品
+			const products = await Product.find({ _id: { $in: productIds } });
+			if (!products || products.length === 0) {
+				return res.status(404).json({
+					status: false,
+					message: '商品未找到',
+				});
+			}
+
+			// 查找優惠券
+			const coupon = userData.discount.find(
+				(coupon) => coupon._id.toString() === couponId
+			);
+			if (!coupon) {
+				return res.status(400).json({
+					status: false,
+					message: '無效的优惠券ID',
+				});
+			}
+
+			// 檢查優惠券是否適用
+			const now = new Date();
+			if (!coupon.isEnabled || now < coupon.startDate || now > coupon.endDate) {
+				return res.status(400).json({
+					status: false,
+					message: '無優惠券可用',
+				});
+			}
+
+			let valid = false;
+			if (coupon.productType === 0) {
+				valid = true;
+			} else if (coupon.productType === 1) {
+				valid = products.every(
+					(product) =>
+						coupon.seller &&
+						coupon.seller.toString() === product.seller.toString()
+				);
+			} else if (coupon.productType === 2) {
+				valid = products.every((product) =>
+					coupon.productChoose.includes(product._id)
+				);
+			}
+
+			if (!valid) {
+				return res.status(400).json({
+					status: 'error',
+					message: '優惠券不是用於選定的商品',
+				});
+			}
+
+			res.json({
+				status: 'success',
+				message: '優惠券驗證成功',
+				discount: coupon,
+			});
+		} catch (err) {
+			res.status(500).json({
+				status: false,
+				message: '出現錯誤捏，再重新試一次看看 ( ˘•ω•˘ )',
+				error: err,
+			});
+		}
+	},
 };
 
 module.exports = cart;
