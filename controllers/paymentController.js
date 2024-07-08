@@ -55,10 +55,10 @@ const initiateOrderPayment = handleErrorAsync(async (req, res, next) => {
 		RespondType: 'JSON',
 		TimeStamp: Date.now(),
 		Version: config.Version,
-		MerchantOrderNo: `${order._id}`,
+		MerchantOrderNo: order._id.toString(),
 		Amt: order.totalPrice + order.fare,
-		ItemDesc: `ECArtisans訂單${order._id}`,
-		Email: req.user.email,
+		ItemDesc: `ECArtisans訂單${order._id.toString()}`,
+		Email: req.user.mail,
 		ReturnURL: config.ReturnUrl,
 		NotifyURL: config.NotifyUrl,
 	};
