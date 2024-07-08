@@ -16,4 +16,6 @@ router.delete('/:productId/:formatId', isAuth, cartController.deleteCart);
 
 router.delete('/', isAuth, cartController.deleteCartAll);
 
+router.post('/coupon', isAuth, cartController.validateCoupon);
+
 module.exports = router;
