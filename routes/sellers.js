@@ -49,17 +49,18 @@ router.get("/:sellerId", async (req, res) => {
     }
 
     // 查詢賣家的所有活動
-    const activities = await Activities.find({ seller: sellerId }).lean();
+    const activities = await Activities.find({ seller_id: sellerId }).lean();
 
-    // 提取所有活動圖片
-    const activitiesImages = activities.map(
-      (activity) => activity.activity_image
-    );
+    // 提取所有活動ID和圖片
+    const activitiesDetails = activities.map((activity) => ({
+      activity_id: activity._id,
+      activity_image: activity.activity_image,
+    }));
 
     // 格式化賣家資料
     const formattedData = {
       seller_id: seller._id,
-      activities_images: activitiesImages, 
+      activities: activitiesDetails, // 包含活動ID和圖片的陣列
       seller_image: seller.avatar,
       seller_name: seller.brand,
       seller_info: seller.introduce,
