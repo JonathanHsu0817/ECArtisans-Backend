@@ -348,7 +348,7 @@ const cart = {
 	async validateCoupon(req, res) {
 		try {
 			const userId = req.user._id;
-			const { productIds, couponId } = req.body;
+			const { productIds } = req.body;
 
 			if (
 				!productIds ||
@@ -356,16 +356,16 @@ const cart = {
 				productIds.length === 0
 			) {
 				return res.status(400).json({
-					status: false,
+					status: 'error',
 					message: '無效的商品ID列表',
 				});
 			}
 
-			// 查找用戶及其優惠券
+			// 查找用户及其优惠券
 			const userData = await User.findById(userId).populate('discount');
 			if (!userData) {
 				return res.status(404).json({
-					status: false,
+					status: 'error',
 					message: '用戶未找到',
 				});
 			}
@@ -374,63 +374,52 @@ const cart = {
 			const products = await Product.find({ _id: { $in: productIds } });
 			if (!products || products.length === 0) {
 				return res.status(404).json({
-					status: false,
+					status: 'error',
 					message: '商品未找到',
 				});
 			}
 
-			// 查找優惠券
-			const coupon = userData.discount.find(
-				(coupon) => coupon._id.toString() === couponId
-			);
-			if (!coupon) {
-				return res.status(400).json({
-					status: false,
-					message: '無效的优惠券ID',
-				});
-			}
+			// 检查所有优惠券，找出适用的优惠券
+			const validCoupons = userData.discount.filter((coupon) => {
+				const now = new Date();
+				if (
+					!coupon.isEnabled ||
+					now < coupon.startDate ||
+					now > coupon.endDate
+				) {
+					return false;
+				}
 
-			// 檢查優惠券是否適用
-			const now = new Date();
-			if (!coupon.isEnabled || now < coupon.startDate || now > coupon.endDate) {
-				return res.status(400).json({
-					status: false,
-					message: '無優惠券可用',
-				});
-			}
+				if (coupon.productType === 0) {
+					// 全馆适用
+					return true;
+				} else if (coupon.productType === 1) {
+					// 指定商家适用
+					return products.every(
+						(product) =>
+							coupon.seller &&
+							coupon.seller.toString() === product.seller.toString()
+					);
+				} else if (coupon.productType === 2) {
+					// 指定商品适用
+					return products.every((product) =>
+						coupon.productChoose.includes(product._id)
+					);
+				}
 
-			let valid = false;
-			if (coupon.productType === 0) {
-				valid = true;
-			} else if (coupon.productType === 1) {
-				valid = products.every(
-					(product) =>
-						coupon.seller &&
-						coupon.seller.toString() === product.seller.toString()
-				);
-			} else if (coupon.productType === 2) {
-				valid = products.every((product) =>
-					coupon.productChoose.includes(product._id)
-				);
-			}
-
-			if (!valid) {
-				return res.status(400).json({
-					status: 'error',
-					message: '優惠券不是用於選定的商品',
-				});
-			}
+				return false;
+			});
 
 			res.json({
 				status: 'success',
-				message: '優惠券驗證成功',
-				discount: coupon,
+				message: '成功获取适用的优惠券',
+				discounts: validCoupons,
 			});
 		} catch (err) {
+			console.error(err);
 			res.status(500).json({
-				status: false,
-				message: '出現錯誤捏，再重新試一次看看 ( ˘•ω•˘ )',
-				error: err,
+				status: 'error',
+				message: '内部服务器错误',
 			});
 		}
 	},
