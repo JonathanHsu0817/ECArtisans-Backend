@@ -1,5 +1,6 @@
 const Cart = require('../../models/cart');
 const Product = require('../../models/product');
+const User = require('../../models/user');
 const appError = require('../../service/appError');
 
 const cart = {
@@ -369,9 +370,10 @@ const cart = {
 					message: '用戶未找到',
 				});
 			}
-
 			// 查找所有商品
-			const products = await Product.find({ _id: { $in: productIds } });
+			const products = await Product.find({
+				_id: { $in: productIds },
+			}).populate('sellerOwned');
 			if (!products || products.length === 0) {
 				return res.status(404).json({
 					status: 'error',
@@ -379,8 +381,22 @@ const cart = {
 				});
 			}
 
+			// 验证所有商品是否属于同一个商家
+			const sellerId = products[0].sellerOwned._id.toString();
+			const allSameSeller = products.every(
+				(product) => product.sellerOwned._id.toString() === sellerId
+			);
+
+			if (!allSameSeller) {
+				return res.status(400).json({
+					status: 'error',
+					message: '所有选定的商品必须属于同一个商家',
+				});
+			}
+
 			// 检查所有优惠券，找出适用的优惠券
 			const validCoupons = userData.discount.filter((coupon) => {
+				console.log('折價券', coupon);
 				const now = new Date();
 				if (
 					!coupon.isEnabled ||
@@ -395,11 +411,7 @@ const cart = {
 					return true;
 				} else if (coupon.productType === 1) {
 					// 指定商家适用
-					return products.every(
-						(product) =>
-							coupon.seller &&
-							coupon.seller.toString() === product.seller.toString()
-					);
+					return coupon.seller && coupon.seller.toString() === sellerId;
 				} else if (coupon.productType === 2) {
 					// 指定商品适用
 					return products.every((product) =>
