@@ -111,7 +111,7 @@ const order = {
 
 				// 计算折扣金额
 				discountAmount =
-					coupon.type === 1 ? (coupon.percentage * totalPrice) / 100 : 0;
+					coupon.type === 1 ? (1 - coupon.percentage / 100) * totalPrice : 0;
 				totalPrice -= discountAmount;
 
 				if (totalPrice < 0) totalPrice = 0; // 确保总价不小于零
