@@ -15,16 +15,23 @@ const order = {
 			const { selectedItems, address, delivery, pay, fare, couponId } =
 				req.body;
 
+			console.log('Request body:', req.body);
+
 			if (
 				!selectedItems ||
 				!Array.isArray(selectedItems) ||
 				selectedItems.length === 0
 			) {
-				return next(appError(400, '無效的選擇項目 ( ˘•ω•˘ )'));
+				return res
+					.status(400)
+					.json({ status: false, message: '無效的選擇項目 ( ˘•ω•˘ )' });
 			}
 
-			if (!address || !delivery || !pay || !fare) {
-				return next(appError(400, '地址、配送方式、支付方式和運費不能為空'));
+			if (!address || !delivery || !pay || fare === undefined) {
+				return res.status(400).json({
+					status: false,
+					message: '地址、配送方式、支付方式和運費不能為空',
+				});
 			}
 
 			const cart = await Cart.findOne({ user: userId }).populate({
@@ -33,7 +40,10 @@ const order = {
 			});
 
 			if (!cart || cart.items.length === 0) {
-				return next(appError(400, '購物車為空的，無法創建訂單 ( ˘•ω•˘ )'));
+				return res.status(400).json({
+					status: false,
+					message: '購物車為空的，無法創建訂單 ( ˘•ω•˘ )',
+				});
 			}
 
 			// 驗證並過濾
@@ -49,11 +59,17 @@ const order = {
 				);
 
 				if (!cartItem) {
-					return next(appError(400, '選定的商品在購物車中不存在 ( ˘•ω•˘ )'));
+					return res.status(400).json({
+						status: false,
+						message: '選定的商品在購物車中不存在 ( ˘•ω•˘ )',
+					});
 				}
 
 				if (sellerId && sellerId !== cartItem.product.sellerOwned.toString()) {
-					return next(appError(400, '選定的商品必須屬於同一商家 ( ˘•ω•˘ )'));
+					return res.status(400).json({
+						status: false,
+						message: '選定的商品必須屬於同一商家 ( ˘•ω•˘ )',
+					});
 				}
 
 				sellerId = cartItem.product.sellerOwned.toString();
@@ -70,24 +86,28 @@ const order = {
 
 			let discountAmount = 0;
 			if (couponId) {
-				const coupon = await Coupon.findOne({ _id: couponId, user: userId });
+				const coupon = await Coupon.findOne({ _id: couponId });
 
 				if (
 					!coupon ||
 					!coupon.isEnabled ||
 					(coupon.endDate && coupon.endDate < Date.now())
 				) {
-					return next(appError(400, '无效的优惠券ID'));
+					return res
+						.status(400)
+						.json({ status: false, message: '無效的優惠券ID' });
 				}
 
 				// 检查优惠券是否适用于所选商品
-				const applicableItems = orderItems.filter((item) =>
-					coupon.productChoose.includes(item.product.toString())
-				);
+				// const applicableItems = orderItems.filter((item) =>
+				// 	coupon.productChoose.includes(item.product.toString())
+				// );
 
-				if (applicableItems.length === 0) {
-					return next(appError(400, '优惠券不适用于选定的商品'));
-				}
+				// if (applicableItems.length === 0) {
+				// 	return res
+				// 		.status(400)
+				// 		.json({ status: false, message: '優惠券不適用於選定的商品' });
+				// }
 
 				// 计算折扣金额
 				discountAmount =
@@ -151,7 +171,6 @@ const order = {
 			});
 		}
 	},
-
 	async getOrders(req, res) {
 		try {
 			const userId = req.user._id;
