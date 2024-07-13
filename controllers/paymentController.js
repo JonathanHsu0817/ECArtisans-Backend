@@ -30,10 +30,10 @@ const initiatePayment = handleErrorAsync(async (req, res, next) => {
 		NotifyURL: config.NotifyUrl,
 	};
 
-	console.log('付款資料格式:', paymentData);
+	// console.log('付款資料格式:', paymentData);
 
 	const paymentInfo = await paymentService.initiatePayment(paymentData);
-	console.log(paymentInfo);
+	// console.log(paymentInfo);
 
 	res.status(200).json({
 		status: true,
@@ -60,17 +60,17 @@ const initiateOrderPayment = handleErrorAsync(async (req, res, next) => {
 		RespondType: 'JSON',
 		TimeStamp: Date.now(),
 		Version: config.Version,
-		MerchantOrderNo: `${Date.now()}`,
+		MerchantOrderNo: order._id.toString(),
 		Amt,
-		ItemDesc: `訂單${Date.now()}`,
+		ItemDesc: `ECArtisans訂單 ${order._id.toString()}`,
 		Email: req.user.mail,
 		ReturnURL: config.ReturnUrl,
 		NotifyURL: config.NotifyUrl,
 	};
-	console.log('付款資料格式:', paymentData);
+	// console.log('付款資料格式:', paymentData);
 
 	const paymentInfo = await paymentService.initiatePayment(paymentData);
-	console.log(paymentInfo);
+	// console.log(paymentInfo);
 
 	res.status(200).json({
 		status: true,
