@@ -93,6 +93,11 @@ const orderSchema = new Schema(
 			//付款時間
 			type: String,
 		},
+		coupon: {
+			type: mongoose.Schema.Types.ObjectId,
+			ref: 'Coupons',
+			default: null, // 默认为 null，如果没有使用优惠券
+		},
 	},
 	{
 		versionKey: false,

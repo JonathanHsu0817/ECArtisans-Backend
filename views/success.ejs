@@ -5,6 +5,13 @@
 		<link rel="stylesheet" href="/stylesheets/style.css" />
 		<style>
 			body {
+				background: url('/images/1720830687271.jpg');
+				background-color: #f7f7f7;
+				background-repeat: no-repeat;
+				background-position: top;
+				background-size: 100%;
+			}
+			.container {
 				display: flex;
 				justify-content: center;
 				align-items: center;
@@ -13,21 +20,44 @@
 				flex-direction: column;
 				text-align: center;
 			}
+			svg {
+				width: 100px;
+				height: 100px;
+				fill: #14b2be;
+			}
 		</style>
 	</head>
 	<body>
-		<h1>結帳成功</h1>
-		<p>5秒後導回官網</p>
-		<a
-			id="redirectLink"
-			href="https://eliza5852.github.io/ECArtisans-Fontend0/?#/"
-		>
-			點擊到登入畫面
-		</a>
-		<script>
-			setTimeout(function () {
-				window.location.href = document.getElementById('redirectLink').href;
-			}, 5000); // 5000 毫秒 = 5 秒
-		</script>
+		<div class="container">
+			<h1>結帳成功</h1>
+			<svg
+				class="svg-inline--fa fa-circle-check opacity-25 text-primary mb-2"
+				aria-hidden="true"
+				focusable="false"
+				data-prefix="fas"
+				data-icon="circle-check"
+				role="img"
+				xmlns="http://www.w3.org/2000/svg"
+				viewBox="0 0 512 512"
+			>
+				<path
+					class=""
+					fill=""
+					d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM369 209L241 337c-9.4 9.4-24.6 9.4-33.9 0l-64-64c-9.4-9.4-9.4-24.6 0-33.9s24.6-9.4 33.9 0l47 47L335 175c9.4-9.4 24.6-9.4 33.9 0s9.4 24.6 0 33.9z"
+				></path>
+			</svg>
+			<p>5秒後導回官網</p>
+			<a
+				id="redirectLink"
+				href="https://eliza5852.github.io/ECArtisans-Fontend0/?#/"
+			>
+				點擊到登入畫面
+			</a>
+			<script>
+				setTimeout(function () {
+					window.location.href = document.getElementById('redirectLink').href;
+				}, 5000); // 5000 毫秒 = 5 秒
+			</script>
+		</div>
 	</body>
 </html>

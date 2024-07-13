@@ -30,7 +30,10 @@ const initiatePayment = handleErrorAsync(async (req, res, next) => {
 		NotifyURL: config.NotifyUrl,
 	};
 
+	console.log('付款資料格式:', paymentData);
+
 	const paymentInfo = await paymentService.initiatePayment(paymentData);
+	console.log(paymentInfo);
 
 	res.status(200).json({
 		status: true,
@@ -50,14 +53,16 @@ const initiateOrderPayment = handleErrorAsync(async (req, res, next) => {
 		return next(appError(404, '訂單不存在'));
 	}
 
+	const Amt = order.totalPrice + order.fare;
+
 	const paymentData = {
 		MerchantID: config.MerchantID,
 		RespondType: 'JSON',
 		TimeStamp: Date.now(),
 		Version: config.Version,
 		MerchantOrderNo: `${Date.now()}`,
-		Amt: order.totalPrice + order.fare,
-		ItemDesc: `訂單 ${Date.now()}`,
+		Amt,
+		ItemDesc: `訂單${Date.now()}`,
 		Email: req.user.mail,
 		ReturnURL: config.ReturnUrl,
 		NotifyURL: config.NotifyUrl,
@@ -65,6 +70,7 @@ const initiateOrderPayment = handleErrorAsync(async (req, res, next) => {
 	console.log('付款資料格式:', paymentData);
 
 	const paymentInfo = await paymentService.initiatePayment(paymentData);
+	console.log(paymentInfo);
 
 	res.status(200).json({
 		status: true,

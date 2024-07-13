@@ -108,6 +108,7 @@ const order = {
 				address,
 				delivery,
 				fare,
+				coupon: couponId || null,
 			});
 
 			// 更新用戶的訂單列表
